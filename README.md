@@ -4,11 +4,11 @@
 	SassyThing based on <a href="https://github.com/mrdoob/three.js">three.js</a>
 </h1>
 
-<h3 align="center">
+<h6 align="center">
   <a href="https://docs.sassy-thing.dev/three">Docs</a>
   ·
   <a href="https://docs.sassy-thing.dev/three/examples">Examples</a>
-</h3>
+</h6>
 
 <p align="center">
     <a href="https://github.com/sassy-thing/three/stargazers"><img src="https://img.shields.io/github/stars/sassy-thing/three?colorA=363a4f&colorB=b7bdf8&style=for-the-badge"></a>
