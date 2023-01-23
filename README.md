@@ -11,9 +11,9 @@
 </h2>
 
 <p align="center">
-    <a href="https://github.com/sassy-thing/sassy-three/stargazers"><img src="https://img.shields.io/github/stars/sassy-thing/dunst?colorA=363a4f&colorB=b7bdf8&style=for-the-badge"></a>
-    <a href="https://github.com/sassy-thing/sassy-three/issues"><img src="https://img.shields.io/github/issues/sassy-thing/dunst?colorA=363a4f&colorB=f5a97f&style=for-the-badge"></a>
-    <a href="https://github.com/sassy-thing/sassy-three/contributors"><img src="https://img.shields.io/github/contributors/sassy-thing/dunst?colorA=363a4f&colorB=a6da95&style=for-the-badge"></a>
+    <a href="https://github.com/sassy-thing/three/stargazers"><img src="https://img.shields.io/github/stars/sassy-thing/dunst?colorA=363a4f&colorB=b7bdf8&style=for-the-badge"></a>
+    <a href="https://github.com/sassy-thing/three/issues"><img src="https://img.shields.io/github/issues/sassy-thing/dunst?colorA=363a4f&colorB=f5a97f&style=for-the-badge"></a>
+    <a href="https://github.com/sassy-thing/three/contributors"><img src="https://img.shields.io/github/contributors/sassy-thing/dunst?colorA=363a4f&colorB=a6da95&style=for-the-badge"></a>
 </p>
 
 <p align="center">
