@@ -1,0 +1,7 @@
+@use 'sass:math';
+
+$epsilon: math.pow(2, -52);
+
+@function sassy-clamp($x, $min, $max) {
+	@return math.clamp($min, $x, $max);
+}

@@ -1,0 +1,24 @@
+@use 'sass:map';
+
+/**
+ * Constructor
+ */
+@function vec2($x: 0, $y: 0) {
+	@return ('x': $x, 'y': $y);
+}
+
+@function vec3($x: 0, $y: 0, $z: 0) {
+	@return ('x': $x, 'y': $y, 'z': $z);
+}
+
+/**
+ * Validators
+ */
+
+@function isVec2($vec) {
+	@return map.has-key($vec, 'x') and map.has-key($vec, 'y') and not map.has-key($vec, 'z');
+}
+
+@function isVec3($vec) {
+	@return map.has-key($vec, 'x') and map.has-key($vec, 'y') and map.has-key($vec, 'z');
+}

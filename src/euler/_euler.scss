@@ -1,0 +1,61 @@
+@use 'sass:map';
+@use 'sass:math';
+
+@use '../utils/math-utils';
+@use '../utils/property-utils';
+@use 'euler.global';
+
+/**
+ * Methods
+ */
+
+/// Copies the xyz properties of $e into $eul
+/// @param {Euler} $eul -
+/// @param {Euler} $e -
+/// @return {Euler} -
+@function copy($eul, $e) {
+	$out: ();
+	@each $key, $value in $eul {
+		$out: map.set($out, $key, map.get($e, $key));
+	}
+
+	@return $out;
+}
+
+/// Compares the xyz properties of $e to the equivalent properties of $eul to determine if they represent the same rotation
+/// @param {Euler} $eul -
+/// @param {Euler} $e Euler that $eul will be compared to
+/// @return {Boolean} -
+@function equals($eul, $e) {
+	$out: true;
+
+	@each $key, $value in $eul {
+		$out: $out and $value == map.get($e, $key);
+	}
+
+	@return $out;
+}
+
+/// Sets the angles of $eul transform from a pure rotation matrix based on the orientation 'xyz'
+/// @param {Euler} $eul -
+/// @param {Matrix4} $matrix A Matrix4 of which the upper 3x3 of the Matrix is a pure rotation Matrix (i.e. unscaled)
+/// @return {Euler} -
+@function setFromRotationMatrix($eul, $matrix) {
+	@error "setFromRotationMatrix not implemented yet. requires Matrix4";
+}
+
+/// Sets the angles of $eul transform from a normalized Quaternion based on the orientation 'xyz'
+/// @param {Euler} $eul -
+/// @param {Quaternion} $quaternion A normalized Quaternion
+/// @return {Euler} -
+@function setFromQuaternion($eul, $quaternion) {
+	@error "setFromQuaternion not implemented yet. requires setFromRotationMatrix";
+}
+
+/// Set the xyz of $eul to match the xyz of $vec based on the orientation 'xyz'
+/// @param {Euler} $eul -
+/// @param {Vector3} $vec -
+/// @return {Euler} -
+@function setFromVector3($eul, $vec) {
+	@return euler(x($vec), y($vec), z($vec));
+}

@@ -1,0 +1,807 @@
+@use 'sass:map';
+@use 'sass:math';
+
+@use '../utils/math-utils';
+@use '../utils/property-utils';
+@use '../quaternion/quaternion' as quaternion;
+@use 'vec.global';
+
+/**
+ * Methods
+ */
+
+/// Adds $v to $vec
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function add($vec, $v) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $value + map.get($v, $key));
+	}
+
+	@return $out;
+}
+
+/// Adds the scalar value $s to $vec's axis values
+/// @param {Vec} $vec -
+/// @param {Number} $s -
+/// @return {Vec} -
+@function addScalar($vec, $s) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $value + $s);
+	}
+
+	@return $out;
+}
+
+/// Applies a rotation specified by $axis and $angle to $vec
+/// @param {Vec3} $vec -
+/// @param {Vec3} $axis - A normalized vec
+/// @param {Number} $angle An angle in radians
+/// @return {Vec3} -
+@function applyAxisAngle($vec, $axis, $angle) {
+	@if not isVec3($vec) or not isVec3($axis) {
+		@error "Arguments $vec #{$vec} and $axis #{$axis} must be of type Vec3.";
+	}
+
+	$quat: quaternion();
+
+	@return applyQuaternion($vec, quaternion.setFromAxisAngle($quat, $axis, $angle));
+}
+
+/// Applies a Euler transform to $vec by converting $euler to a Quaternion and applying
+/// @param {Vec3} $vec -
+/// @param {Euler} $euler -
+/// @return {Vec3} -
+@function applyEuler($vec, $euler) {
+	@error "applyEuler not implemented yet. requires applyQuaternion, Euler";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Multiplies $vec by $matrix
+/// If $vec is of type Vec2, an implicit 1 is used for the 3rd dimension)
+/// @param {Vec} $vec -
+/// @param {Matrix3} $matrix -
+/// @return {Vec} -
+@function applyMatrix3($vec, $matrix) {
+	@error "applyMatrix3 not implemented yet. requires matrix3";
+}
+
+/// Multiplies $vec (with an implicit 1 in the 4th dimension) by $matrix, and divides by perspective
+/// @param {Vec3} $vec -
+/// @param {Matrix4} $matrix -
+/// @return {Vec3} -
+@function applyMatrix4($vec, $matrix) {
+	@error "applyMatrix4 not implemented yet. requires matrix4";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Multiplies $vec by normal Matrix $matrix and normalizes the result
+/// @param {Vec3} $vec -
+/// @param {Matrix3} $matrix -
+/// @return {Vec3} -
+@function applyNormalMatrix($vec, $matrix) {
+	@error "applyNormalMatrix not implemented yet. requires matrix3";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Applies a Quaternion transform to $vec
+/// @param {Vec3} $vec -
+/// @param {Quaternion} $quaternion -
+/// @return {Vec3} -
+@function applyQuaternion($vec, $quaternion) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	$x: x($vec);
+	$y: y($vec);
+	$z: z($vec);
+
+	$qx: x($quaternion);
+	$qy: y($quaternion);
+	$qz: z($quaternion);
+	$qw: w($quaternion);
+
+	// calculate quat * vector
+	$ix: $qw * $x + $qy * $z - $qz * $y;
+	$iy: $qw * $y + $qz * $x - $qx * $z;
+	$iz: $qw * $z + $qx * $y - $qy * $x;
+	$iw: $qx * $x + $qy * $y - $qz * $z;
+
+	// calculate result * inverse quat
+	@return vec3(
+		$ix * $qw + $iw * -$qx + $iy * -$qz - $iz * -$qy,
+		$iy * $qw + $iw * -$qy + $iz * -$qx - $ix * -$qz,
+		$iz * $qw + $iw * -$qz + $ix * -$qy - $iy * -$qx
+	);
+}
+
+/// Computes the angle between $vec and $v in radians
+/// @param {Vec3} $vec -
+/// @param {Vec3} $v -
+/// @return {Number} -
+@function angleTo($vec, $v) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	$denominator: math.sqrt(lengthSq($vec) * lengthSq($v));
+
+	@if ($denominator == 0) {
+		@return math.$pi / 2;
+	}
+
+	$theta: math.div(dot($vec, $v), $denominator);
+
+	// clamp, to handle numerical problems
+	@return math.acos(sassy-clamp($theta, -1, 1));
+}
+
+/// The $vec's axis values are rounded up to the nearest integer value
+/// @param {Vec} $vec -
+/// @return {Vec} -
+@function ceil($vec) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.ceil($value));
+	}
+
+	@return $out;
+}
+
+/// If $vec's axis value is greater than $max's axis value, it is replaced by the corresponding value
+/// If $vec's axis value is less than $min's axis value, it is replaced by the corresponding value
+/// @param {Vec} $vec -
+/// @param {Vec} $min The minimum Vec
+/// @param {Vec} $max The maximum Vec
+/// @return {Vec} -
+@function sassy-clamp($vec, $min, $max) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set(
+			$out,
+			$key,
+			math-utils.clamp($value, map.get($min, $key), map.get($max, $key))
+		);
+	}
+
+	@return $out;
+}
+
+/// If $vec's length is greater than $max, $vec will be scaled down so its length is the $max value
+/// If $vec's length is less than $min, $vec will be scaled up so its length is the $min value
+/// @param {Vec} $vec -
+/// @param {Number} $min The minimum value the length will be clamped to
+/// @param {Number} $max The maximum value the length will be clamped to
+/// @return {Vec} -
+@function clampLength($vec, $min, $max) {
+	$length: length($vec);
+
+	@return multiplyScalar(divideScalar($vec, $length), sassy-clamp($length, $min, $max));
+}
+
+/// If $vec's axis values are greater than $max, they are replaced by $max's value
+/// If $vec's axis values are less than $min, they are replaced by $min's value
+/// @param {Vec} $vec -
+/// @param {Number} $min The minimum value the axis values will be clamped to
+/// @param {Number} $max The maximum value the axis values will be clamped to
+/// @return {Vec} -
+@function clampScalar($vec, $min, $max) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math-utils.clamp($value, $min, $max));
+	}
+
+	@return $out;
+}
+
+/// Copies the values of $v's properties to $vec
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function copy($vec, $v) {
+	@if length($vec) != length($v) {
+		@error "Arguments $vec #{$vec} and $v #{$v} must be the same vector type.";
+	}
+
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, map.get($v, $key));
+	}
+
+	@return $out;
+}
+
+/// Computes the cross product of $vec and $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec3} -
+@function cross($vec, $v) {
+	@if not isVec3($vec) or not isVec3($v) {
+		@error "Arguments $vec #{$vec} and $v #{$v} must be of type Vec3.";
+	}
+
+	@return vec3(
+		y($vec) * z($v) - y($v) * z($vec),
+		z($vec) * x($v) - z($v) * x($vec),
+		x($vec) * y($v) - x($v) * y($vec)
+	);
+}
+
+/// Computes the distance from $vec to $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Number} -
+@function distanceTo($vec, $v) {
+	@return math.sqrt(distanceToSquared($vec, $v));
+}
+
+/// Computes the Manhattan distance from $vec to $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Number} -
+@function manhattanDistanceTo($vec, $v) {
+	$out: 0;
+	@each $key, $value in $vec {
+		$out: $out + math.abs($value - map.get($v, $key));
+	}
+
+	@return $out;
+}
+
+/// Computes the squared distance from $vec to $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Number} -
+@function distanceToSquared($vec, $v) {
+	$out: 0;
+	@each $key, $value in $vec {
+		$d: $value - map.get($v, $key);
+		$out: $out + $d * $d;
+	}
+
+	@return $out;
+}
+
+/// Divides $vec by $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function divide($vec, $v) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.div($value, map.get($v, $key)));
+	}
+
+	@return $out;
+}
+
+/// Divides $vec by scalar $s
+/// @param {Vec} $vec -
+/// @param {Number} $s -
+/// @return {Vec} -
+@function divideScalar($vec, $s) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.div($value, $s));
+	}
+
+	@return $out;
+}
+
+/// Computes the dot product of $vec and $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Number} -
+@function dot($vec, $v) {
+	@if length($vec) != length($v) {
+		@error "Arguments $vec #{$vec} and $v #{$v} must be the same vector type.";
+	}
+
+	$out: 0;
+	@each $key, $value in $vec {
+		$out: $out + $value * map.get($v, $key);
+	}
+
+	@return $out;
+}
+
+/// Returns true if the axis values of $vec and $v are strictly equal; false otherwise
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Boolean} -
+@function equals($vec, $v) {
+	$out: true;
+
+	@each $key, $value in $vec {
+		$out: $out and $value == map.get($v, $key);
+	}
+
+	@return $out;
+}
+
+/// The $vec's axis values are rounded down to the nearest integer value
+/// @param {Vec} $vec -
+/// @return {Vec} -
+@function floor($vec) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.floor($value));
+	}
+
+	@return $out;
+}
+
+/// Sets $vec's from $array
+/// @param {Vec} $vec -
+/// @param {sass:list} $array The source array
+/// @param {Number} $offset [0] offset into the array
+/// @return {Vec} -
+@function fromArray($vec, $array, $offset: 0) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.floor($value));
+	}
+
+	@for $i from 1 through list.length(map.values($vec)) {
+		$out: map.set($out, list.nth(map.keys($vec), $i), list.nth($array, $offset + $i));
+	}
+
+	@return $out;
+}
+
+/// Computes the Euclidean length (straight-line length) from world origin to $vec
+/// @param {Vec} $vec -
+/// @return {Number} -
+@function length($vec) {
+	$out: 0;
+	@each $key, $value in $vec {
+		$out: $out + $value * $value;
+	}
+
+	@return math.sqrt($out);
+}
+
+/// Computes the Manhattan length of $vec
+/// @param {Vec} $vec -
+/// @return {Number} -
+@function manhattanLength($vec) {
+	$out: 0;
+	@each $key, $value in $vec {
+		$out: $out + math.abs($value);
+	}
+
+	@return $out;
+}
+
+/// Computes the square of the Euclidean length (straight-line length) from world origin to $vec
+/// @param {Vec} $vec -
+/// @return {Number} -
+@function lengthSq($vec) {
+	$out: 0;
+	@each $key, $value in $vec {
+		$out: $out + $value * $value;
+	}
+
+	@return $out;
+}
+
+/// Linearly interpolate between $vec and $v, where $alpha is the percent distance along the line
+/// $alpha: 0 will be $vec, and alpha: 1 will be $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v Vec to interpolate towards
+/// @param {Number} $alpha interpolation factor, typically in the closed interval [0, 1]
+/// @return {Vec} -
+@function lerp($vec, $v, $alpha) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $value + ((map.get($v, $key) - $value) * $alpha));
+	}
+
+	@return $out;
+}
+
+/// If $vec's axis value is less than $v's axis value, it is replaced by the corresponding max value
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function max($vec, $v) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.max($value, map.get($v, $key)));
+	}
+
+	@return $out;
+}
+
+/// If $vec's axis value is greater than $v's axis value, it is replaced by the corresponding min value
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function min($vec, $v) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.min($value, map.get($v, $key)));
+	}
+
+	@return $out;
+}
+
+/// Multiplies $vec by $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function multiply($vec, $v) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $value * map.get($v, $key));
+	}
+
+	@return $out;
+}
+
+/// Multiplies $vec by scalar $s
+/// @param {Vec} $vec -
+/// @param {Number} $s -
+/// @return {Vec} -
+@function multiplyScalar($vec, $s) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $value * $s);
+	}
+
+	@return $out;
+}
+
+/// Inverts $vec
+/// @param {Vec} $vec -
+/// @return {Vec} -
+@function negate($vec) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, -$value);
+	}
+
+	@return $out;
+}
+
+/// Convert $vec to a unit Vec - that is, sets it equal to a Vec with the same direction as $vec, but length 1
+/// @param {Vec} $vec -
+/// @return {Vec} -
+@function normalize($vec) {
+	$scalar: length($vec);
+	@if ($scalar == 0) {
+		$scalar: 1;
+	}
+
+	@return divideScalar($vec, $scalar);
+}
+
+/// Projects $vec from world space into $camera's normalized device coordinate (NDC) space
+/// @param {Vec3} $vec -
+/// @param {Camera} $camera Camera to use in the projection
+/// @return {Vec3} -
+@function project($vec, $camera) {
+	@error "project not implemented yet. requires applyMatrix4, camera";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Projects $vec onto a plane by subtracting $vec projected onto the plane's normal from $vec
+/// @param {Vec3} $vec -
+/// @param {Vec3} $planeNormal A Vec representing a plane normal
+/// @return {Vec3} -
+@function projectOnPlane($vec, $planeNormal) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	@return sub($vec, projectOnVector($vec, $planeNormal));
+}
+
+/// Projects $vec onto $v
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function projectOnVector($vec, $v) {
+	$denominator: lengthSq($v);
+
+	@if (denominator == 0) {
+		@if (isVec2($vec)) {
+			@return vec2(0, 0);
+		} @else {
+			@return vec3(0, 0, 0);
+		}
+	}
+
+	$scalar: math.div(dot($v, $vec), $denominator);
+
+	@return multiplyScalar($v, $scalar);
+}
+
+/// Reflect $vec off of plane orthogonal to $normal. $normal is assumed to have unit length
+/// @param {Vec3} $vec -
+/// @param {Vec3} $normal The normal to the reflecting plane
+/// @return {Vec3} -
+@function reflect($vec, $normal) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	@return sub($vec, multiplyScalar($normal, 2 * dot($vec, $normal)));
+}
+
+/// Rotates $vec around $center by $angle
+/// @param {Vec2} $vec -
+/// @param {Vec2} $center The point around which to rotate
+/// @param {Number} $angle The angle to rotate, in radians
+/// @return {Vec2} -
+@function rotateAround($vec, $center, $angle) {
+	@if not isVec2($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec2.";
+	}
+
+	$c: math.cos($angle);
+	$s: math.sin($angle);
+
+	$x: x($vec) - x($center);
+	$y: y($vec) - y($center);
+
+	@return vec2($x * $c - $y * $s + x($center), $x * $s + $y * $c + y($center));
+}
+
+/// The $vec's axis values are rounded to the nearest integer value
+/// @param {Vec} $vec -
+/// @return {Vec} -
+@function round($vec) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.round($value));
+	}
+
+	@return $out;
+}
+
+/// The $vec's axis values are rounded towards zero (up if negative, down if positive) to an integer value
+/// @param {Vec} $vec -
+/// @return {Vec} -
+@function roundToZero($vec) {
+	$out: ();
+	@each $key, $value in $vec {
+		@if ($value < 0) {
+			$out: map.set($out, $key, math.ceil($value));
+		} @else {
+			$out: map.set($out, $key, math.floor($value));
+		}
+	}
+
+	@return $out;
+}
+
+/// Sets $vec from the Cylindrical coordinates $c
+/// @param {Vec3} $vec -
+/// @param {Cylindrical} $cylindrical -
+/// @return {Vec3} -
+@function setFromCylindrical($vec, $cylindrical) {
+	@error "setFromCylindrical not implemented yet. requires Cylindrical";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Sets $vec from the Cylindrical coordinates $radius, $theta and $y
+/// @param {Vec3} $vec -
+/// @param {Number} $radius -
+/// @param {Number} $theta -
+/// @param {Number} $y -
+/// @return {Vec3} -
+@function setFromCylindricalCoords($vec, $radius, $theta, $y) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	@return vec3($radius * math.sin($theta), y($vec), $radius * math.cos($theta));
+}
+
+/// Sets $vec's axis values from the axis values of the specified Euler angle
+/// @param {Vec3} $vec -
+/// @param {Euler} $euler -
+/// @return {Vec3} -
+@function setFromEuler($vec, $euler) {
+	@error "setFromEuler not implemented yet. requires Euler, applyQuaternion";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Sets $vec's axis values from $index column of $matrix
+/// @param {Vec3} $vec -
+/// @param {Matrix4} $matrix -
+/// @param {Number} $index -
+/// @return {Vec3} -
+@function setFromMatrixColumn($vec, $matrix, $index) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	@return fromArray($vec, $matrix, $index * 4);
+}
+
+/// Sets $vec's axis values from $index column of $matrix
+/// @param {Vec3} $vec -
+/// @param {Matrix3} $matrix -
+/// @param {Number} $index -
+/// @return {Vec3} -
+@function setFromMatrix3Column($vec, $matrix, $index) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	@return fromArray($vec, $matrix, $index * 3);
+}
+
+/// Sets $vec to the position elements of the transformation matrix $matrix
+/// @param {Vec3} $vec -
+/// @param {Matrix4} $matrix -
+/// @return {Vec3} -
+@function setFromMatrixPosition($vec, $matrix) {
+	@error "setFromMatrixPosition not implemented yet. requires Matrix4";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Sets $vec to the scale elements of the transformation matrix $matrix
+/// @param {Vec3} $vec -
+/// @param {Matrix4} $matrix -
+/// @return {Vec3} -
+@function setFromMatrixScale($vec, $matrix) {
+	@error "setFromMatrixScale not implemented yet. requires Matrix4";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Sets $vec from the Spherical coordinates $spherical
+/// @param {Vec3} $vec -
+/// @param {Spherical} $spherical -
+/// @return {Vec3} -
+@function setFromSpherical($vec, $spherical) {
+	@error "setFromSpherical not implemented yet. requires Spherical, setFromSphericalCoords";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Sets $vec from the Spherical coordinates $radius, $phi and $theta
+/// @param {Vec3} $vec -
+/// @param {Number} $radius -
+/// @param {Number} $phi -
+/// @param {Number} $theta -
+/// @return {Vec3} -
+@function setFromSphericalCoords($vec, $radius, $phi, $theta) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	$sinPhiRadius: math.sin($phi) * $radius;
+
+	@return vec3(
+		$sinPhiRadius * math.sin($theta),
+		math.cos($phi) * $radius,
+		$sinPhiRadius * math.cos($theta)
+	);
+}
+
+/// Set $vec to a Vec with the same direction as $vec, but length $l
+/// @param {Vec} $vec -
+/// @param {Number} $length -
+/// @return {Vec} -
+@function setLength($vec, $length) {
+	@return multiplyScalar(normalize($vec), $length);
+}
+
+/// SET $vec's axis values equal to $scalar
+/// @param {Vec} $vec -
+/// @param {Number} $scalar -
+/// @return {Vec} $vec with $scalar for all axis values
+@function setScalar($vec, $scalar) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $scalar);
+	}
+
+	@return $out;
+}
+
+/// Subtracts $v from $vec
+/// @param {Vec} $vec -
+/// @param {Vec} $v -
+/// @return {Vec} -
+@function sub($vec, $v) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $value - map.get($v, $key));
+	}
+
+	@return $out;
+}
+
+/// Subtracts the scalar value $s from $vec's axis values
+/// @param {Vec} $vec -
+/// @param {Number} $s -
+/// @return {Vec} -
+@function subScalar($vec, $s) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, $value - $s);
+	}
+
+	@return $out;
+}
+
+/// Transforms the direction of $vec by a Matrix (the upper left 3 x 3 subset of a Matrix) and then normalizes the result
+/// @param {Vec3} $vec -
+/// @param {Matric4} $matrix -
+/// @return {Vec3} -
+@function transformDirection($vec, $matrix) {
+	@error "transformDirection not implemented yet. requires Matrix4";
+
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+}
+
+/// Projects $vec from the $camera's normalized device coordinate (NDC) space into world space
+/// @param {Vec3} $vec -
+/// @param {Camera} $camera Camera to use in the projection
+/// @return {Vec3} -
+@function unproject($vec, $camera) {
+	@error "unproject not implemented yet. requires Camera, applyMatrix4";
+}
+
+/// Sets $vec's axis values to a pseudo-random value between 0 and 1, excluding 1
+/// @param {Vec} $vec -
+/// @return {Vec} -
+@function random($vec) {
+	$out: ();
+	@each $key, $value in $vec {
+		$out: map.set($out, $key, math.random());
+	}
+
+	@return $out;
+}
+
+/// Sets $vec to a uniformly random point on a unit sphere
+/// @param {Vec3} $vec -
+/// @return {Vec3} -
+@function randomDirection($vec) {
+	@if not isVec3($vec) {
+		@error "Argument $vec #{$vec} must be of type Vec3.";
+	}
+
+	$u: (math.random() - 0.5) * 2;
+	$t: math.random() * math.$pi * 2;
+	$f: math.sqrt(1 - math.pow($u, 2));
+
+	@return vec3($f * math.cos($t), $f * math.sin($t), $u);
+}

@@ -1,0 +1,69 @@
+@use 'sass:map';
+
+/**
+ * Property GET utilites
+ */
+
+/// GET x
+/// @param {sass:map} $map -
+/// @return {sass:value} the x value of $map
+@function x($map) {
+	@return map.get($map, 'x');
+}
+
+/// GET y
+/// @param {sass:map} $map -
+/// @return {sass:value} the y value of $map
+@function y($map) {
+	@return map.get($map, 'y');
+}
+
+/// GET z
+/// @param {sass:map} $map -
+/// @return {sass:value} the z value of $map
+@function z($map) {
+	@return map.get($map, 'z');
+}
+
+/// GET w
+/// @param {sass:map} $map -
+/// @return {sass:value} the w value of $map
+@function w($map) {
+	@return map.get($map, 'w');
+}
+
+/**
+ * Property SET utilites
+ */
+
+/// SET x
+/// @param {sass:map} $map -
+/// @param {sass:value} $x -
+/// @return {sass:map} $map with $x for property x
+@function setX($map, $x) {
+	@return map.set($map, 'x', $x);
+}
+
+/// SET y
+/// @param {sass:map} $map -
+/// @param {sass:value} $y -
+/// @return {sass:map} $map with $y for property y
+@function setY($map, $y) {
+	@return map.set($map, 'y', $y);
+}
+
+/// SET z
+/// @param {sass:map} $map -
+/// @param {sass:value} $z -
+/// @return {sass:map} $map with $z for property z
+@function setZ($map, $z) {
+	@return map.set($map, 'z', $z);
+}
+
+/// SET w
+/// @param {sass:map} $map -
+/// @param {sass:value} $w -
+/// @return {sass:map} $map with $w for property w
+@function setW($map, $w) {
+	@return map.set($map, 'w', $w);
+}

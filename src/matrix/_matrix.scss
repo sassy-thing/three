@@ -1,0 +1,1090 @@
+@use 'sass:map';
+@use 'sass:math';
+
+@use '../utils/math-utils';
+@use '../utils/property-utils';
+@use '../vec/vec' as vec;
+@use 'vec.global';
+@use 'matrix.global';
+
+/**
+ * Methods
+ */
+
+/// Copies the values of Matrix $m into $mtx
+/// @param {Matrix} $mtx -
+/// @param {Matrix} $m -
+/// @return {Matrix} -
+@function copy($mtx, $m) {
+	@if length($mtx) != length($m) {
+		@error "Arguments $mtx #{$mtx} and $m #{$m} must be the same matrix type.";
+	}
+
+	$out: $mtx;
+	@for $i from 1 through list.length($mtx) {
+		$out: list.set-nth($out, $i, list.nth($m, $i));
+	}
+
+	@return $out;
+}
+
+/// Computes the determinant of this matrix
+/// @param {Matrix3} $mtx -
+/// @return {Number} -
+@function determinant($mtx) {
+	$a: list.nth(1);
+	$b: list.nth(2);
+	$c: list.nth(3);
+	$d: list.nth(4);
+	$e: list.nth(5);
+	$f: list.nth(6);
+	$g: list.nth(7);
+	$h: list.nth(8);
+	$i: list.nth(9);
+
+	@return $a * $e * $i - $a * $f * $h - $b * $d * $i + $b * $f * $g + $c * $d * $h - $c * $e * $g;
+}
+
+/// Returns true if $mtx and $m are equal
+/// @param {Matrix} $mtx -
+/// @param {Matrix} $m -
+/// @return {Boolean} -
+@function equals($mtx, $m) {
+	@if length($mtx) != length($m) {
+		@return false;
+	}
+
+	$out: true;
+	@each $key, $value in $vec {
+		$out: $out and $value == map.get($v, $key);
+	}
+	@for $i from 1 through list.length($mtx) {
+		$out: $out and list.nth($mtx, $i) == list.nth($m, $i);
+	}
+
+	@return $out;
+}
+
+/// Extracts the basis of $mtx into three axis Vectors
+/// @param {Matrix3} $mtx -
+/// @return {sass:map($xAxis: Vec3, $yAxis: Vec3, $zAxis: Vec3)} -
+@function extractBasisMatrix3($mtx) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	$xAxis: vec.setFromMatrix3Column(vec3(), $mtx, 1);
+	$yAxis: vec.setFromMatrix3Column(vec3(), $mtx, 2);
+	$zAxis: vec.setFromMatrix3Column(vec3(), $mtx, 3);
+
+	@return ($xAxis, $yAxis, $zAxis);
+}
+
+/// Extracts the basis of $mtx into three axis Vectors
+/// @param {Matrix4} $mtx -
+/// @return {sass:map($xAxis: Vec3, $yAxis: Vec3, $zAxis: Vec3)} -
+@function extractBasisMatrix4($mtx) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$xAxis: vec.setFromMatrixColumn(vec3(), $mtx, 1);
+	$yAxis: vec.setFromMatrixColumn(vec3(), $mtx, 2);
+	$zAxis: vec.setFromMatrixColumn(vec3(), $mtx, 3);
+
+	@return ($xAxis, $yAxis, $zAxis);
+}
+
+/// Inverts $mtx, using the analytic method
+/// You can not invert with a determinant of zero; If you attempt this, the method produces a zero matrix instead
+/// @param {Matrix3} $mtx -
+/// @return {Matrix3} -
+@function invertMatrix3($mtx) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	$n11: list.nth($mtx, 1);
+	$n12: list.nth($mtx, 2);
+	$n13: list.nth($mtx, 3);
+	$n21: list.nth($mtx, 4);
+	$n22: list.nth($mtx, 5);
+	$n23: list.nth($mtx, 6);
+	$n31: list.nth($mtx, 7);
+	$n32: list.nth($mtx, 8);
+	$n33: list.nth($mtx, 9);
+
+	$t11: $n33 * $n22 - $n32 * $n23;
+	$t12: $n32 * $n13 - $n33 * $n12;
+	$t13: $n23 * $n12 - $n22 * $n13;
+
+	$det: $n11 * $t11 + $n21 * $t12 + $n31 * $t13;
+
+	@if ($det == 0) {
+		@return matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0);
+	}
+
+	$detInv: math.div(1, $det);
+
+	/* prettier-ignore */
+	@return matrix3(
+		$t11 * $detInv,
+		($n31 * $n23 - $n33 * $n21) * $detInv,
+		($n32 * $n21 - $n31 * $n22) * $detInv,
+
+		$t12 * $detInv,
+		($n33 * $n11 - $n31 * $n13) * $detInv,
+		($n31 * $n12 - $n32 * $n11) * $detInv,
+
+		$t13 * $detInv,
+		($n21 * $n13 - $n23 * $n11) * $detInv,
+		($n22 * $n11 - $n21 * $n12) * $detInv
+	);
+}
+
+/// Inverts $mtx, using the analytic method
+/// You can not invert with a determinant of zero; If you attempt this, the method produces a zero matrix instead
+/// @param {Matrix4} $mtx -
+/// @return {Matrix4} -
+@function invertMatrix4($mtx) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$n11: list.nth($mtx, 1);
+	$n21: list.nth($mtx, 2);
+	$n31: list.nth($mtx, 3);
+	$n41: list.nth($mtx, 4);
+	$n12: list.nth($mtx, 5);
+	$n22: list.nth($mtx, 6);
+	$n32: list.nth($mtx, 7);
+	$n42: list.nth($mtx, 8);
+	$n13: list.nth($mtx, 9);
+	$n23: list.nth($mtx, 10);
+	$n33: list.nth($mtx, 11);
+	$n43: list.nth($mtx, 12);
+	$n14: list.nth($mtx, 13);
+	$n24: list.nth($mtx, 14);
+	$n34: list.nth($mtx, 15);
+	$n44: list.nth($mtx, 16);
+
+	$t11: $n23 * $n34 * $n42 - $n24 * $n33 * $n42 + $n24 * $n32 * $n43 - $n22 * $n34 * $n43 - $n23 *
+		$n32 * $n44 + $n22 * $n33 * $n44;
+	$t12: $n14 * $n33 * $n42 - $n13 * $n34 * $n42 - $n14 * $n32 * $n43 + $n12 * $n34 * $n43 + $n13 *
+		$n32 * $n44 - $n12 * $n33 * $n44;
+	$t13: $n13 * $n24 * $n42 - $n14 * $n23 * $n42 + $n14 * $n22 * $n43 - $n12 * $n24 * $n43 - $n13 *
+		$n22 * $n44 + $n12 * $n23 * $n44;
+	$t14: $n14 * $n23 * $n32 - $n13 * $n24 * $n32 - $n14 * $n22 * $n33 + $n12 * $n24 * $n33 + $n13 *
+		$n22 * $n34 - $n12 * $n23 * $n34;
+
+	$det: $n11 * $t11 + $n21 * $t12 + $n31 * $t13 + $n41 * $t14;
+
+	@if ($det == 0) {
+		@return matrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+	}
+
+	$detInv: math.div(1, $det);
+
+	/* prettier-ignore */
+	@return matrix4(
+		$t11 * $detInv,
+		( $n24 * $n33 * $n41 - $n23 * $n34 * $n41 - $n24 * $n31 * $n43 + $n21 * $n34 * $n43 + $n23 * $n31 * $n44 - $n21 * $n33 * $n44 ) * $detInv,
+		( $n22 * $n34 * $n41 - $n24 * $n32 * $n41 + $n24 * $n31 * $n42 - $n21 * $n34 * $n42 - $n22 * $n31 * $n44 + $n21 * $n32 * $n44 ) * $detInv,
+		( $n23 * $n32 * $n41 - $n22 * $n33 * $n41 - $n23 * $n31 * $n42 + $n21 * $n33 * $n42 + $n22 * $n31 * $n43 - $n21 * $n32 * $n43 ) * $detInv,
+
+		$t12 * $detInv,
+		( $n13 * $n34 * $n41 - $n14 * $n33 * $n41 + $n14 * $n31 * $n43 - $n11 * $n34 * $n43 - $n13 * $n31 * $n44 + $n11 * $n33 * $n44 ) * $detInv,
+		( $n14 * $n32 * $n41 - $n12 * $n34 * $n41 - $n14 * $n31 * $n42 + $n11 * $n34 * $n42 + $n12 * $n31 * $n44 - $n11 * $n32 * $n44 ) * $detInv,
+		( $n12 * $n33 * $n41 - $n13 * $n32 * $n41 + $n13 * $n31 * $n42 - $n11 * $n33 * $n42 - $n12 * $n31 * $n43 + $n11 * $n32 * $n43 ) * $detInv,
+
+		$t13 * $detInv,
+		( $n14 * $n23 * $n41 - $n13 * $n24 * $n41 - $n14 * $n21 * $n43 + $n11 * $n24 * $n43 + $n13 * $n21 * $n44 - $n11 * $n23 * $n44 ) * $detInv,
+		( $n12 * $n24 * $n41 - $n14 * $n22 * $n41 + $n14 * $n21 * $n42 - $n11 * $n24 * $n42 - $n12 * $n21 * $n44 + $n11 * $n22 * $n44 ) * $detInv,
+		( $n13 * $n22 * $n41 - $n12 * $n23 * $n41 - $n13 * $n21 * $n42 + $n11 * $n23 * $n42 + $n12 * $n21 * $n43 - $n11 * $n22 * $n43 ) * $detInv,
+
+		$t14 * $detInv,
+		( $n13 * $n24 * $n31 - $n14 * $n23 * $n31 + $n14 * $n21 * $n33 - $n11 * $n24 * $n33 - $n13 * $n21 * $n34 + $n11 * $n23 * $n34 ) * $detInv,
+		( $n14 * $n22 * $n31 - $n12 * $n24 * $n31 - $n14 * $n21 * $n32 + $n11 * $n24 * $n32 + $n12 * $n21 * $n34 - $n11 * $n22 * $n34 ) * $detInv,
+		( $n12 * $n23 * $n31 - $n13 * $n22 * $n31 + $n13 * $n21 * $n32 - $n11 * $n23 * $n32 - $n12 * $n21 * $n33 + $n11 * $n22 * $n33 ) * $detInv,
+	);
+}
+
+/// Sets $mtx as the upper left 3x3 of the normal matrix of the passed Matrix4 $m
+/// The normal matrix is the inverse transpose of $m
+/// @param {Matrix3} $mtx -
+/// @param {Matrix4} $m -
+/// @return {Matrix3} -
+@function getNormalMatrix($mtx, $m) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	@if not isMatrix4($m) {
+		@error "Argument $m #{$m} must be of type Matrix4.";
+	}
+
+	@return transposeMatrix3(invertMatrix3(setFromMatrix4($mtx, $m)));
+}
+
+/// Returns the identity matrix of $mtx's matrix type
+/// @param {Matrix} $mtx -
+/// @return {Matrix} -
+@function identity($mtx) {
+	@if isMatrix3($mtx) {
+		@return matrix3();
+	}
+
+	@if isMatrix4($mtx) {
+		@return matrix4();
+	}
+}
+
+/// Sets $mtx as a 2D rotational transformation by $theta radians
+/// @param {Matrix3} $mtx -
+/// @param {Number} $theta Rotation angle in radians; positive values rotate counterclockwise
+/// @return {Matrix3} -
+@function makeRotation($mtx, $theta) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	$c: math.cos($theta);
+	$s: math.sin($theta);
+
+	@return matrix3($c, -$s, 0, $s, $c, 0, 0, 0, 1);
+}
+
+/// Sets $mtx as scale transform
+/// @param {Matrix} $mtx -
+/// @param {Number} $x The amount to scale in the x axis
+/// @param {Number} $y The amount to scale in the y axis
+/// @param {Number} $z [1] The amount to scale in the z axis
+/// @return {Matrix} -
+@function makeScale($mtx, $x, $y, $z: 1) {
+	@if isMatrix3($mtx) {
+		@return matrix3($x, 0, 0, 0, $y, 0, 0, 0, $z);
+	}
+
+	@if isMatrix4($mtx) {
+		@return matrix4($x, 0, 0, 0, 0, $y, 0, 0, 0, 0, $z, 0, 0, 0, 0, 1);
+	}
+}
+
+/// Sets $mtx as translation transform
+/// @param {Matrix} $mtx -
+/// @param {Number} $x The amount to translate in the x axis
+/// @param {Number} $y The amount to translate in the y axis
+/// @param {Number} $z [1] The amount to translate in the z axis
+/// @return {Matrix} -
+@function makeTranslation($mtx, $x, $y, $z: 1) {
+	@if isMatrix3($mtx) {
+		@return matrix3(1, 0, $x, 0, 1, $y, 0, 0, $z);
+	}
+
+	@if isMatrix4($mtx) {
+		@return matrix4(1, 0, 0, $x, 0, 1, 0, $y, 0, 0, 1, $z, 0, 0, 0, 1);
+	}
+}
+
+/// Post-multiplies $mtx by $m
+/// @param {Matrix3} $mtx -
+/// @param {Number} $m -
+/// @return {Matrix3} -
+@function multiplyMatrix3($mtx, $m) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	$out: matrix3();
+
+	// Read matrixes
+	$a11: list.nth($mtx, 1);
+	$a12: list.nth($mtx, 4);
+	$a13: list.nth($mtx, 5);
+	$a21: list.nth($mtx, 2);
+	$a22: list.nth($mtx, 5);
+	$a23: list.nth($mtx, 8);
+	$a31: list.nth($mtx, 3);
+	$a32: list.nth($mtx, 6);
+	$a33: list.nth($mtx, 9);
+
+	$b11: list.nth($m, 1);
+	$b12: list.nth($m, 4);
+	$b13: list.nth($m, 7);
+	$b21: list.nth($m, 2);
+	$b22: list.nth($m, 5);
+	$b23: list.nth($m, 8);
+	$b31: list.nth($m, 3);
+	$b32: list.nth($m, 6);
+	$b33: list.nth($m, 9);
+
+	// Multiply matrixes
+	$out: list.set-nth($out, 1, $a11 * $b11 + $a12 * $b21 + $a13 * $b31);
+	$out: list.set-nth($out, 4, $a11 * $b12 + $a12 * $b22 + $a13 * $b32);
+	$out: list.set-nth($out, 7, $a11 * $b13 + $a12 * $b23 + $a13 * $b33);
+
+	$out: list.set-nth($out, 2, $a21 * $b11 + $a22 * $b21 + $a23 * $b31);
+	$out: list.set-nth($out, 5, $a21 * $b12 + $a22 * $b22 + $a23 * $b32);
+	$out: list.set-nth($out, 8, $a21 * $b13 + $a22 * $b23 + $a23 * $b33);
+
+	$out: list.set-nth($out, 3, $a31 * $b11 + $a32 * $b21 + $a33 * $b31);
+	$out: list.set-nth($out, 6, $a31 * $b12 + $a32 * $b22 + $a33 * $b32);
+	$out: list.set-nth($out, 9, $a31 * $b13 + $a32 * $b23 + $a33 * $b33);
+
+	@return $out;
+}
+
+/// Post-multiplies $mtx by $m
+/// @param {Matrix4} $mtx -
+/// @param {Number} $m -
+/// @return {Matrix4} -
+@function multiplyMatrix4($mtx, $m) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$out: matrix4();
+
+	// Read matrixes
+	$a11: list.nth($mtx, 0);
+	$a12: list.nth($mtx, 4);
+	$a13: list.nth($mtx, 8);
+	$a14: list.nth($mtx, 12);
+	$a21: list.nth($mtx, 1);
+	$a22: list.nth($mtx, 5);
+	$a23: list.nth($mtx, 9);
+	$a24: list.nth($mtx, 13);
+	$a31: list.nth($mtx, 2);
+	$a32: list.nth($mtx, 6);
+	$a33: list.nth($mtx, 10);
+	$a34: list.nth($mtx, 14);
+	$a41: list.nth($mtx, 3);
+	$a42: list.nth($mtx, 7);
+	$a43: list.nth($mtx, 11);
+	$a44: list.nth($mtx, 15);
+
+	$b11: list.nth($m, 0);
+	$b12: list.nth($m, 4);
+	$b13: list.nth($m, 8);
+	$b14: list.nth($m, 12);
+	$b21: list.nth($m, 1);
+	$b22: list.nth($m, 5);
+	$b23: list.nth($m, 9);
+	$b24: list.nth($m, 13);
+	$b31: list.nth($m, 2);
+	$b32: list.nth($m, 6);
+	$b33: list.nth($m, 10);
+	$b34: list.nth($m, 14);
+	$b41: list.nth($m, 3);
+	$b42: list.nth($m, 7);
+	$b43: list.nth($m, 11);
+	$b44: list.nth($m, 15);
+
+	// Mutliply matrixes
+	$out: list.set-nth($out, 0, $a11 * $b11 + $a12 * $b21 + $a13 * $b31 + $a14 * $b41);
+	$out: list.set-nth($out, 4, $a11 * $b12 + $a12 * $b22 + $a13 * $b32 + $a14 * $b42);
+	$out: list.set-nth($out, 8, $a11 * $b13 + $a12 * $b23 + $a13 * $b33 + $a14 * $b43);
+	$out: list.set-nth($out, 12, $a11 * $b14 + $a12 * $b24 + $a13 * $b34 + $a14 * $b44);
+
+	$out: list.set-nth($out, 1, $a21 * $b11 + $a22 * $b21 + $a23 * $b31 + $a24 * $b41);
+	$out: list.set-nth($out, 5, $a21 * $b12 + $a22 * $b22 + $a23 * $b32 + $a24 * $b42);
+	$out: list.set-nth($out, 9, $a21 * $b13 + $a22 * $b23 + $a23 * $b33 + $a24 * $b43);
+	$out: list.set-nth($out, 13, $a21 * $b14 + $a22 * $b24 + $a23 * $b34 + $a24 * $b44);
+
+	$out: list.set-nth($out, 2, $a31 * $b11 + $a32 * $b21 + $a33 * $b31 + $a34 * $b41);
+	$out: list.set-nth($out, 6, $a31 * $b12 + $a32 * $b22 + $a33 * $b32 + $a34 * $b42);
+	$out: list.set-nth($out, 10, $a31 * $b13 + $a32 * $b23 + $a33 * $b33 + $a34 * $b43);
+	$out: list.set-nth($out, 14, $a31 * $b14 + $a32 * $b24 + $a33 * $b34 + $a34 * $b44);
+
+	$out: list.set-nth($out, 3, $a41 * $b11 + $a42 * $b21 + $a43 * $b31 + $a44 * $b41);
+	$out: list.set-nth($out, 7, $a41 * $b12 + $a42 * $b22 + $a43 * $b32 + $a44 * $b42);
+	$out: list.set-nth($out, 11, $a41 * $b13 + $a42 * $b23 + $a43 * $b33 + $a44 * $b43);
+	$out: list.set-nth($out, 15, $a41 * $b14 + $a42 * $b24 + $a43 * $b34 + $a44 * $b44);
+
+	@return $out;
+}
+
+/// Multiplies every component of $mtx by $scalar
+/// @param {Matrix} $mtx -
+/// @param {Number} $scalar -
+/// @return {Matrix} -
+@function multiplyScalar($mtx, $scalar) {
+	$out: $mtx;
+
+	@for $i from 1 through list.length($mtx) {
+		$out: list.set-nth($out, $i, list.nth($mtx, $i) * $scalar);
+	}
+
+	@return $out;
+}
+
+/// Rotates $mtx by the given angle (in radians)
+/// @param {Matrix3} $mtx -
+/// @param {Number} $theta -
+/// @return {Matrix3} -
+@function rotate($mtx, $theta) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	@return premultiplyMatrix3($mtx, makeRotation(matrix3(), -$theta));
+}
+
+/// Scales $mtx with the given scalar values
+/// @param {Matrix3} $mtx -
+/// @param {Number} $sx -
+/// @param {Number} $sy -
+/// @return {Matrix3} -
+@function scale($mtx, $theta) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	@return premultiplyMatrix3($mtx, makeScale(matrix3(), $sx, $sy));
+}
+
+/// Pre-multiplies $mtx by $m
+/// @param {Matrix3} $mtx -
+/// @param {Matrix3} $m -
+/// @return {Matrix3} -
+@function premultiplyMatrix3($mtx, $m) {
+	@return multiplyMatrix3($m, $mtx);
+}
+
+/// Pre-multiplies $mtx by $m
+/// @param {Matrix4} $mtx -
+/// @param {Matrix4} $m -
+/// @return {Matrix4} -
+@function premultiplyMatrix4($mtx, $m) {
+	@return multiplyMatrix4($m, $mtx);
+}
+
+/// Set $mtx to the upper 3x3 matrix of the Matrix4 $m
+/// @param {Matrix3} $mtx -
+/// @param {Matrix4} $m -
+/// @return {Matrix3} -
+@function setFromMatrix4($mtx, $m) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	@if not isMatrix4($m) {
+		@error "Argument $m #{$m} must be of type Matrix4.";
+	}
+
+	@return matrix3(
+		list.nth($m, 1),
+		list.nth($m, 5),
+		list.nth($m, 9),
+		list.nth($m, 2),
+		list.nth($m, 6),
+		list.nth($m, 10),
+		list.nth($m, 3),
+		list.nth($m, 7),
+		list.nth($m, 11)
+	);
+}
+
+/// Sets the UV transform matrix from offset, repeat, rotation, and center
+/// @param {Matrix3} $mtx -
+/// @param {Number} $tx offset x
+/// @param {Number} $ty offset y
+/// @param {Number} $sx repeat x
+/// @param {Number} $sy repeat y
+/// @param {Number} $rotation rotation, in radians. Positive values rotate counterclockwise
+/// @param {Number} $cx center x of rotation
+/// @param {Number} $cy center y of rotation
+/// @return {Matrix3} -
+@function setUvTransform($mtx, $tx, $ty, $sx, $sy, $rotation, $cx, $cy) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	$c: math.cos($rotation);
+	$s: math.sin($rotation);
+
+	@return matrix3(
+		$sx * $c,
+		$sx * $s,
+		-$sx * ($c * $cx + $s * $cy) + $cx + $tx,
+		-$sy * $s,
+		$sy * $c,
+		-$sy * (-$s * $cx + $c * $cy) + $cy + $ty,
+		0,
+		0,
+		1
+	);
+}
+
+/// Translates $mtx by the given scalar values
+/// @param {Matrix3} $mtx -
+/// @param {Number} $tx -
+/// @param {Number} $ty -
+/// @return {Matrix3} -
+@function translate($mtx, $tx, $ty) {
+	@if not isMatrix3($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
+	}
+
+	@return premultiplyMatrix3($mtx, makeTranslation(matrix3(), $tx, $ty));
+}
+
+/// Transposes $mtx in place
+/// @param {Matrix3} $mtx -
+/// @return {Matrix3} -
+@function transposeMatrix3($mtx) {
+	$out: $mtx;
+
+	$out: list.set-nth($out, 2, list.nth($mtx, 4));
+	$out: list.set-nth($out, 4, list.nth($mtx, 2));
+	$out: list.set-nth($out, 3, list.nth($mtx, 7));
+	$out: list.set-nth($out, 7, list.nth($mtx, 3));
+	$out: list.set-nth($out, 6, list.nth($mtx, 8));
+	$out: list.set-nth($out, 8, list.nth($mtx, 6));
+
+	@return $out;
+}
+
+/// Transposes $mtx in place
+/// @param {Matrix4} $mtx -
+/// @return {Matrix4} -
+@function transposeMatrix4($mtx) {
+	$out: $mtx;
+
+	$out: list.set-nth($out, 2, list.nth($mtx, 5));
+	$out: list.set-nth($out, 5, list.nth($mtx, 2));
+	$out: list.set-nth($out, 3, list.nth($mtx, 9));
+	$out: list.set-nth($out, 9, list.nth($mtx, 3));
+	$out: list.set-nth($out, 7, list.nth($mtx, 10));
+	$out: list.set-nth($out, 10, list.nth($mtx, 7));
+
+	$out: list.set-nth($out, 4, list.nth($mtx, 13));
+	$out: list.set-nth($out, 13, list.nth($mtx, 4));
+	$out: list.set-nth($out, 8, list.nth($mtx, 14));
+	$out: list.set-nth($out, 14, list.nth($mtx, 8));
+	$out: list.set-nth($out, 12, list.nth($mtx, 15));
+	$out: list.set-nth($out, 15, list.nth($mtx, 12));
+
+	@return $out;
+}
+
+/// Sets $mtx to the transformation composed of $position, $quaternion and $scale
+/// @param {Matrix4} $mtx -
+/// @param {Vector3} $position -
+/// @param {Quaternion} $quaternion -
+/// @param {Vector3} $scale -
+/// @return {Matrix4} -
+@function compose($position, $quaternion, $scale) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$x: x($quaternion);
+	$y: y($quaternion);
+	$z: z($quaternion);
+	$w: w($quaternion);
+	$x2: $x + $x;
+	$y2: $y + $y;
+	$z2: $z + $z;
+	$xx: $x * $x2;
+	$xy: $x * $y2;
+	$xz: $x * $z2;
+	$yy: $y * $y2;
+	$yz: $y * $z2;
+	$zz: $z * $z2;
+	$wx: $w * $x2;
+	$wy: $w * $y2;
+	$wz: $w * $z2;
+
+	$sx: x($scale);
+	$sy: y($scale);
+	$sz: z($scale);
+
+	/* prettier-ignore */
+	@return matrix4(
+		(1 - ($yy + $zz)) * $sx,
+		($xy + $wz) * $sx,
+		($xz - $wy) * $sx,
+		0,
+
+		($xy - $wz) * $sy,
+		(1 - ($xx + $zz)) * $sy,
+		($yz + $wx) * $sy,
+		0,
+
+		($xz + $wy) * $sz,
+		($yz - $wx) * $sz,
+		(1 - ($xx + $yy)) * $sz,
+		0,
+
+		x($position),
+		y($position),
+		z($position),
+		1
+	);
+}
+
+/// Copies the translation component of the supplied matrix $m into $mtx's translation component
+/// @param {Matrix4} $mtx -
+/// @param {Matrix4} $m -
+/// @return {Matrix4} -
+@function copyPosition($mtx, $m) {
+	@if not isMatrix4($mtx) or not isMatrix4($m) {
+		@error "Arguments $mtx #{$mtx} and $m #{$m} must be of type Matrix4.";
+	}
+
+	$out: $mtx;
+
+	$out: list.set-nth($out, 13, list.nth($m, 13));
+	$out: list.set-nth($out, 14, list.nth($m, 14));
+	$out: list.set-nth($out, 15, list.nth($m, 15));
+}
+
+/// Decomposes $mtx into its position, quaternion and scale components
+/// Note: Not all matrices are decomposable in this way
+/// For example, if an object has a non-uniformly scaled parent, then the object's world matrix may not be decomposable, and this method may not be appropriate
+/// @param {Matrix4} $mtx -
+/// @return {sass:map($position: Vec3, $quaternion: Quaternion, $scale: Vec3)} -
+@function decompose($mtx) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$sx: vec.length(vec3(list.nth($mtx, 1), list.nth($mtx, 2), list.nth($mtx, 3)));
+	$sy: vec.length(vec3(list.nth($mtx, 5), list.nth($mtx, 6), list.nth($mtx, 7)));
+	$sz: vec.length(vec3(list.nth($mtx, 9), list.nth($mtx, 10), list.nth($mtx, 11)));
+
+	// If determine is negative, we need to invert one scale
+	$det: determinant($mtx);
+	@if ($det < 0) {
+		$sx: -$sx;
+	}
+
+	$position: vec3(list.nth($mtx, 13), list.nth($mtx, 14), list.nth($mtx, 15));
+
+	// Scale the rotation part
+	$m1: $mtx;
+
+	$invSX: math.div(1, $sx);
+	$invSY: math.div(1, $sy);
+	$invSZ: math.div(1, $sz);
+
+	$m1: list.set-nth($m1, 1, list.nth($m1, 1) * $invSX);
+	$m1: list.set-nth($m1, 2, list.nth($m1, 2) * $invSX);
+	$m1: list.set-nth($m1, 3, list.nth($m1, 3) * $invSX);
+
+	$m1: list.set-nth($m1, 5, list.nth($m1, 5) * $invSY);
+	$m1: list.set-nth($m1, 6, list.nth($m1, 6) * $invSY);
+	$m1: list.set-nth($m1, 7, list.nth($m1, 7) * $invSY);
+
+	$m1: list.set-nth($m1, 9, list.nth($m1, 9) * $invSZ);
+	$m1: list.set-nth($m1, 10, list.nth($m1, 10) * $invSZ);
+	$m1: list.set-nth($m1, 11, list.nth($m1, 11) * $invSZ);
+
+	$quaternion: quaternion.setFromRotationMatrix(quaternion(), $m1);
+
+	$scale: vec3($sx, $sy, $sz);
+
+	@return ($position, $quaternion, $scale);
+}
+
+/// Extracts the rotation component of the supplied matrix $m into $mtx's rotation component
+/// @param {Matrix4} $mtx -
+/// @param {Matrix4} $m -
+/// @return {Matrix4} -
+@function extractRotation($mtx, $m) {
+	@if not isMatrix4($mtx) or not isMatrix4($m) {
+		@error "Arguments $mtx #{$mtx} and $m #{$m} must be of type Matrix4.";
+	}
+
+	$scaleX: math.div(1, vec.length(vec.setFromMatrixColumn(vec3(), $m, 1)));
+	$scaleY: math.div(1, vec.length(vec.setFromMatrixColumn(vec3(), $m, 2)));
+	$scaleZ: math.div(1, vec.length(vec.setFromMatrixColumn(vec3(), $m, 3)));
+
+	/* prettier-ignore */
+	@return matrix4(
+		list.nth($m, 1) * $scaleX,
+		list.nth($m, 2) * $scaleX,
+		list.nth($m, 3) * $scaleX,
+		0,
+
+		list.nth($m, 5) * $scaleY,
+		list.nth($m, 6) * $scaleY,
+		list.nth($m, 7) * $scaleY,
+		0,
+
+		list.nth($m, 9) * $scaleZ,
+		list.nth($m, 10) * $scaleZ,
+		list.nth($m, 11) * $scaleZ,
+		0,
+
+		0,
+		0,
+		0,
+		1
+	);
+}
+
+/// Gets the maximum scale value of the 3 axes
+/// @param {Matrix4} $mtx -
+/// @return {Number} -
+@function getMaxScaleOnAxis($mtx) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$scaleXSq: list.nth($mtx, 1) * list.nth($mtx, 1) + list.nth($mtx, 2) * list.nth($mtx, 2) +
+		list.nth($mtx, 3) * list.nth($mtx, 3);
+	$scaleYSq: list.nth($mtx, 5) * list.nth($mtx, 5) + list.nth($mtx, 6) * list.nth($mtx, 6) +
+		list.nth($mtx, 7) * list.nth($mtx, 7);
+	$scaleZSq: list.nth($mtx, 9) * list.nth($mtx, 9) + list.nth($mtx, 10) * list.nth($mtx, 10) +
+		list.nth($mtx, 11) * list.nth($mtx, 11);
+
+	@return math.sqrt(math.max($scaleXSq, $scaleYSq, $scaleZSq));
+}
+
+/// Constructs a rotation matrix, looking from $eye towards $target oriented by the $up vector
+/// @param {Matrix4} $mtx -
+/// @param {Vec3} $eye -
+/// @param {Vec3} $target -
+/// @param {Vec3} $up -
+/// @return {Matrix4} -
+@function lookAt($mtx, $eye, $target, $up) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$z: vec.sub($eye, $target);
+
+	@if (vec.lengthSq($z) == 0) {
+		// $eye and $target are in the same position
+		$z: setZ($z, 1);
+	}
+
+	$z: vec.normalize($z);
+	$x: vec.cross($up, $z);
+
+	@if (vec.lengthSq($x) == 0) {
+		// $up and $z are parallel
+		@if (math.abs(z($up)) == 1) {
+			$z: setX($z, x($z) + 0.0001);
+		} @else {
+			$z: setZ($z, z($z) + 0.0001);
+		}
+
+		$z: vec.normalize($z);
+		$x: vec.cross($up, $z);
+	}
+
+	$x: vec.normalize($x);
+	$y: vec.cross($z, $x);
+
+	$out: $mtx;
+
+	$out: list.set-nth($mtx, 1, x(x));
+	$out: list.set-nth($mtx, 5, x(y));
+	$out: list.set-nth($mtx, 9, x(z));
+	$out: list.set-nth($mtx, 2, y(x));
+	$out: list.set-nth($mtx, 6, y(y));
+	$out: list.set-nth($mtx, 10, y(z));
+	$out: list.set-nth($mtx, 3, z(x));
+	$out: list.set-nth($mtx, 7, z(y));
+	$out: list.set-nth($mtx, 11, z(z));
+
+	@return $out;
+}
+
+/// Sets $mtx as rotation transform around $axis by $theta radians
+/// This is a somewhat controversial but mathematically sound alternative to rotating via Quaternions
+/// @param {Matrix4} $mtx -
+/// @param {Vec3} $axis Rotation axis, should be normalized
+/// @param {Number} $theta Rotation angle in radians
+/// @return {Matrix4} -
+@function makeRotationAxis($mtx, $axis, $theta) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$c: math.cos($theta);
+	$s: math.sin($theta);
+	$t: 1 - $c;
+	$x: x($axis);
+	$y: y($axis);
+	$z: z($axis);
+	$tx: $t * $x;
+	$ty: $t * $y;
+
+	/* prettier-ignore */
+	@return matrix4(
+		$tx * $x + $c,
+		$tx * $y - $s * $z,
+		$tx * $z + $s * $y,
+		0,
+
+		$tx * $y + $s * $z,
+		$ty * $y + $c,
+		$ty * $z - $s * $x,
+		0,
+
+		$tx * $z - $s * $y,
+		$ty * $z + $s * $x,
+		t * $z * $z + $c,
+		0,
+
+		0,
+		0,
+		0,
+		1
+	);
+}
+
+/// Set $mtx to the basis matrix consisting of the three provided basis vectors
+/// @param {Matrix4} $mtx -
+/// @param {Vec3} $xAxis -
+/// @param {Vec3} $yAxis -
+/// @param {Vec3} $zAxis -
+/// @return {Matrix4} -
+@function makeBasis($mtx, $xAxis, $yAxis, $zAxis) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	/* prettier-ignore */
+	@return matrix4(
+		x($xAxis), x($yAxis), x($zAxis), 0,
+		y($xAxis), y($yAxis), y($zAxis), 0,
+		z($xAxis), z($yAxis), z($zAxis), 0,
+		0, 0, 0, 1
+	);
+}
+
+/// Creates a perspective projection matrix
+/// This is used internally by PerspectiveCamera.updateProjectionMatrix()
+/// @param {Matrix4} $mtx -
+/// @param {Number} $left -
+/// @param {Number} $right -
+/// @param {Number} $top -
+/// @param {Number} $bottom -
+/// @param {Number} $near -
+/// @param {Number} $far -
+/// @return {Matrix4} -
+@function makePerspective($mtx, $left, $right, $top, $bottom, $near, $far) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$x: 2 * math.div($near, ($right - $left));
+	$y: 2 * math.div($near, ($top - $bottom));
+
+	$a: math.div(($right + $left), ($right - $left));
+	$b: math.div(($top + $bottom), ($top - $bottom));
+	$c: math.div(-($far + $near), ($far - $near));
+	$d: math.div(-2 * $far * $near, ($far - $near));
+
+	@return matrix4($x, 0, 0, 0, 0, $y, 0, 0, $a, $b, $c, -1, 0, 0, $d, 0);
+}
+
+/// Creates an orthographic projection matrix
+/// This is used internally by OrthographicCamera.updateProjectionMatrix()
+/// @param {Matrix4} $mtx -
+/// @param {Number} $left -
+/// @param {Number} $right -
+/// @param {Number} $top -
+/// @param {Number} $bottom -
+/// @param {Number} $near -
+/// @param {Number} $far -
+/// @return {Matrix4} -
+@function makeOrthographic($mtx, $left, $right, $top, $bottom, $near, $far) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$w: math.div(1, ($right - $left));
+	$h: math.div(1, ($top - $bottom));
+	$p: math.div(1, ($far - $near));
+
+	$x: ($right + $left) * $w;
+	$y: ($top + $bottom) * $h;
+	$z: ($far + $near) * $p;
+
+	@return matrix4(2 * $w, 0, 0, 0, 0, 2 * $h, 0, 0, 0, 0, -2 * $p, 0, -$x, -$y, -$z, 1);
+}
+
+/// Sets the rotation component (the upper left 3x3 matrix) of $mtx to the rotation specified by $euler
+/// The rest of the matrix is set to the identity
+/// NOTE: this assumes a Euler with orientation 'xyz'
+/// @param {Matrix4} $mtx -
+/// @param {Euler} $euler Euler with orientation 'xyz'
+/// @return {Matrix4} -
+@function makeRotationFromEuler($mtx, $euler) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$out: $mtx;
+
+	$x: x($euler);
+	$y: y($euler);
+	$z: z($euler);
+
+	$a: math.cos($x);
+	$b: math.sin($x);
+	$c: math.cos($y);
+
+	$d: math.sin($y);
+	$e: math.cos($z);
+	$f: math.sin($z);
+
+	$ae: $a * $e;
+	$af: $a * $f;
+	$be: $b * $e;
+	$bf: $b * $f;
+
+	$out: list.set-nth($out, 1, $c * $e);
+	$out: list.set-nth($out, 5, -$c * $f);
+	$out: list.set-nth($out, 9, $d);
+
+	$out: list.set-nth($out, 2, $af + $be * $d);
+	$out: list.set-nth($out, 6, $ae - $bf * $d);
+	$out: list.set-nth($out, 10, -$b * $c);
+
+	$out: list.set-nth($out, 3, $bf - $ae * $d);
+	$out: list.set-nth($out, 7, $be + $af * $d);
+	$out: list.set-nth($out, 11, $a * $c);
+
+	// bottom row
+	$out: list.set-nth($out, 4, 0);
+	$out: list.set-nth($out, 8, 0);
+	$out: list.set-nth($out, 12, 0);
+
+	// last column
+	$out: list.set-nth($out, 13, 0);
+	$out: list.set-nth($out, 14, 0);
+	$out: list.set-nth($out, 15, 0);
+	$out: list.set-nth($out, 16, 1);
+
+	@return $out;
+}
+
+/// Sets the rotation component of $mtx to the rotation specified by $q
+/// The rest of the matrix is set to the identity
+/// @param {Matrix4} $mtx -
+/// @param {Quaternion} $q -
+/// @return {Matrix4} -
+@function makeRotationFromQuaternion($mtx, $q) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	@return compose(vec3(), $q, vec3(1, 1, 1));
+}
+
+/// Sets $mtx as a rotational transformation around the X axis by $theta radians
+/// @param {Matrix4} $mtx -
+/// @param {Number} $theta Rotation angle in radians
+/// @return {Matrix4} -
+@function makeRotationX($mtx, $theta) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$c: math.cos($theta);
+	$s: math.sin($theta);
+
+	@return matrix4(1, 0, 0, 0, 0, $c, -$s, 0, 0, $s, $c, 0, 0, 0, 0, 1);
+}
+
+/// Sets $mtx as a rotational transformation around the Y axis by $theta radians
+/// @param {Matrix4} $mtx -
+/// @param {Number} $theta Rotation angle in radians
+/// @return {Matrix4} -
+@function makeRotationY($mtx, $theta) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$c: math.cos($theta);
+	$s: math.sin($theta);
+
+	@return matrix4($c, 0, $s, 0, 0, 1, 0, 0, -$s, 0, $c, 0, 0, 0, 0, 1);
+}
+
+/// Sets $mtx as a rotational transformation around the Z axis by $theta radians
+/// @param {Matrix4} $mtx -
+/// @param {Number} $theta Rotation angle in radians
+/// @return {Matrix4} -
+@function makeRotationZ($mtx, $theta) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$c: math.cos($theta);
+	$s: math.sin($theta);
+
+	@return matrix4($c, -$s, 0, 0, $s, $c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+}
+
+/// Sets $mtx as a shear transform
+/// @param {Matrix4} $mtx -
+/// @param {Number} $xy the amount to shear X by Y
+/// @param {Number} $xz the amount to shear X by Z
+/// @param {Number} $yx the amount to shear Y by X
+/// @param {Number} $yz the amount to shear Y by Z
+/// @param {Number} $zx the amount to shear Z by X
+/// @param {Number} $zy the amount to shear Z by Y
+/// @return {Matrix4} -
+@function makeShear($mtx, $xy, $xz, $yx, $yz, $zx, $zy) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	@return matrix4(1, $yx, $zx, 0, $xy, 1, $zy, 0, $xz, $yz, 1, 0, 0, 0, 0, 1);
+}
+
+/// Set the upper 3x3 elements of $mtx to the values of the Matrix3 $m
+/// @param {Matrix4} $mtx -
+/// @param {Matrix3} $m -
+/// @return {Matrix4} -
+@function setFromMatrix3($mtx, $m) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	@if not isMatrix3($mtx) {
+		@error "Argument $m #{$m} must be of type Matrix3.";
+	}
+
+	/* prettier-ignore */
+	@return matrix4(
+		list.nth($m, 0), list.nth($m, 3), list.nth($m, 6), 0,
+		list.nth($m, 1), list.nth($m, 4), list.nth($m, 7), 0,
+		list.nth($m, 2), list.nth($m, 5), list.nth($m, 8), 0,
+		0, 0, 0, 1
+	);
+}
+
+/// Sets the position component for $mtx from vector $v, without affecting the rest of the matrix
+/// @param {Matrix4} $mtx -
+/// @param {Number | Vec3} $x -
+/// @param {Number} $y -
+/// @param {Number} $z -
+/// @return {Matrix4} -
+@function setPosition($mtx, $x, $y, $z) {
+	@if not isMatrix4($mtx) {
+		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
+	}
+
+	$out: $mtx;
+
+	@if isVec3($x) {
+		$out: list.set-nth($out, 13, x($x));
+		$out: list.set-nth($out, 14, y($x));
+		$out: list.set-nth($out, 15, z($x));
+	} @else {
+		$out: list.set-nth($out, 13, $x);
+		$out: list.set-nth($out, 14, $y);
+		$out: list.set-nth($out, 15, $z);
+	}
+
+	@return $out;
+}
