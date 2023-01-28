@@ -1,8 +1,8 @@
 @use 'sass:map';
 @use 'sass:math';
 
-@use '../utils/math-utils';
-@use '../utils/property-utils';
+@use '../../utils/math-utils';
+@use '../../utils/property-utils';
 
 @use '../matrix/matrix' as matrix;
 @use '../matrix/matrix.global' as *;

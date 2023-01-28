@@ -1,14 +1,14 @@
-@forward 'vec/vec.global';
-@forward 'vec/vec' as vec-*;
+@forward 'math/vec/vec.global';
+@forward 'math/vec/vec' as vec-*;
 
-@forward 'quaternion/quaternion.global';
-@forward 'quaternion/quaternion' as quaternion-*;
+@forward 'math/quaternion/quaternion.global';
+@forward 'math/quaternion/quaternion' as quaternion-*;
 
-@forward 'euler/euler.global';
-@forward 'euler/euler' as euler-*;
+@forward 'math/euler/euler.global';
+@forward 'math/euler/euler' as euler-*;
 
-@forward 'matrix/matrix.global';
-@forward 'matrix/matrix' as matrix-*;
+@forward 'math/matrix/matrix.global';
+@forward 'math/matrix/matrix' as matrix-*;
 
 @forward 'utils/math-utils';
 @forward 'utils/property-utils';

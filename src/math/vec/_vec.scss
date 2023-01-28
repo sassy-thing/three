@@ -1,8 +1,8 @@
 @use 'sass:map';
 @use 'sass:math';
 
-@use '../utils/math-utils';
-@use '../utils/property-utils';
+@use '../../utils/math-utils';
+@use '../../utils/property-utils';
 
 @use '../quaternion/quaternion' as quaternion;
 @use 'vec.global' as *;
