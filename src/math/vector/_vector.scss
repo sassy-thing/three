@@ -47,7 +47,7 @@
 		@error "Arguments $vec #{$vec} and $axis #{$axis} must be of type Vector3.";
 	}
 
-	$quat: quaternion();
+	$quat: Quaternion();
 
 	@return applyQuaternion($vec, quaternion.setFromAxisAngle($quat, $axis, $angle));
 }
@@ -61,7 +61,7 @@
 		@error "Argument $vec #{$vec} must be of type Vector3.";
 	}
 
-	@return applyQuaternion($vec, quaternion.setFromEuler(quaternion(), $euler));
+	@return applyQuaternion($vec, quaternion.setFromEuler(Quaternion(), $euler));
 }
 
 /// Multiplies $vec by $matrix

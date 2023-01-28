@@ -122,13 +122,13 @@
 	$det: $n11 * $t11 + $n21 * $t12 + $n31 * $t13;
 
 	@if ($det == 0) {
-		@return matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0);
+		@return Matrix3(0, 0, 0, 0, 0, 0, 0, 0, 0);
 	}
 
 	$detInv: math.div(1, $det);
 
 	/* prettier-ignore */
-	@return matrix3(
+	@return Matrix3(
 		$t11 * $detInv,
 		($n31 * $n23 - $n33 * $n21) * $detInv,
 		($n32 * $n21 - $n31 * $n22) * $detInv,
@@ -181,13 +181,13 @@
 	$det: $n11 * $t11 + $n21 * $t12 + $n31 * $t13 + $n41 * $t14;
 
 	@if ($det == 0) {
-		@return matrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+		@return Matrix4(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	}
 
 	$detInv: math.div(1, $det);
 
 	/* prettier-ignore */
-	@return matrix4(
+	@return Matrix4(
 		$t11 * $detInv,
 		( $n24 * $n33 * $n41 - $n23 * $n34 * $n41 - $n24 * $n31 * $n43 + $n21 * $n34 * $n43 + $n23 * $n31 * $n44 - $n21 * $n33 * $n44 ) * $detInv,
 		( $n22 * $n34 * $n41 - $n24 * $n32 * $n41 + $n24 * $n31 * $n42 - $n21 * $n34 * $n42 - $n22 * $n31 * $n44 + $n21 * $n32 * $n44 ) * $detInv,
@@ -232,11 +232,11 @@
 /// @return {Matrix} -
 @function identity($mtx) {
 	@if isMatrix3($mtx) {
-		@return matrix3();
+		@return Matrix3();
 	}
 
 	@if isMatrix4($mtx) {
-		@return matrix4();
+		@return Matrix4();
 	}
 }
 
@@ -252,7 +252,7 @@
 	$c: math.cos($theta);
 	$s: math.sin($theta);
 
-	@return matrix3($c, -$s, 0, $s, $c, 0, 0, 0, 1);
+	@return Matrix3($c, -$s, 0, $s, $c, 0, 0, 0, 1);
 }
 
 /// Sets $mtx as scale transform
@@ -263,11 +263,11 @@
 /// @return {Matrix} -
 @function makeScale($mtx, $x, $y, $z: 1) {
 	@if isMatrix3($mtx) {
-		@return matrix3($x, 0, 0, 0, $y, 0, 0, 0, $z);
+		@return Matrix3($x, 0, 0, 0, $y, 0, 0, 0, $z);
 	}
 
 	@if isMatrix4($mtx) {
-		@return matrix4($x, 0, 0, 0, 0, $y, 0, 0, 0, 0, $z, 0, 0, 0, 0, 1);
+		@return Matrix4($x, 0, 0, 0, 0, $y, 0, 0, 0, 0, $z, 0, 0, 0, 0, 1);
 	}
 }
 
@@ -279,11 +279,11 @@
 /// @return {Matrix} -
 @function makeTranslation($mtx, $x, $y, $z: 1) {
 	@if isMatrix3($mtx) {
-		@return matrix3(1, 0, $x, 0, 1, $y, 0, 0, $z);
+		@return Matrix3(1, 0, $x, 0, 1, $y, 0, 0, $z);
 	}
 
 	@if isMatrix4($mtx) {
-		@return matrix4(1, 0, 0, $x, 0, 1, 0, $y, 0, 0, 1, $z, 0, 0, 0, 1);
+		@return Matrix4(1, 0, 0, $x, 0, 1, 0, $y, 0, 0, 1, $z, 0, 0, 0, 1);
 	}
 }
 
@@ -296,7 +296,7 @@
 		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
 	}
 
-	$out: matrix3();
+	$out: Matrix3();
 
 	// Read matrixes
 	$a11: list.nth($mtx, 1);
@@ -344,7 +344,7 @@
 		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
 	}
 
-	$out: matrix4();
+	$out: Matrix4();
 
 	// Read matrixes
 	$a11: list.nth($mtx, 0);
@@ -428,7 +428,7 @@
 		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
 	}
 
-	@return premultiplyMatrix3($mtx, makeRotation(matrix3(), -$theta));
+	@return premultiplyMatrix3($mtx, makeRotation(Matrix3(), -$theta));
 }
 
 /// Scales $mtx with the given scalar values
@@ -441,7 +441,7 @@
 		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
 	}
 
-	@return premultiplyMatrix3($mtx, makeScale(matrix3(), $sx, $sy));
+	@return premultiplyMatrix3($mtx, makeScale(Matrix3(), $sx, $sy));
 }
 
 /// Pre-multiplies $mtx by $m
@@ -473,7 +473,7 @@
 		@error "Argument $m #{$m} must be of type Matrix4.";
 	}
 
-	@return matrix3(
+	@return Matrix3(
 		list.nth($m, 1),
 		list.nth($m, 5),
 		list.nth($m, 9),
@@ -504,7 +504,7 @@
 	$c: math.cos($rotation);
 	$s: math.sin($rotation);
 
-	@return matrix3(
+	@return Matrix3(
 		$sx * $c,
 		$sx * $s,
 		-$sx * ($c * $cx + $s * $cy) + $cx + $tx,
@@ -527,7 +527,7 @@
 		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
 	}
 
-	@return premultiplyMatrix3($mtx, makeTranslation(matrix3(), $tx, $ty));
+	@return premultiplyMatrix3($mtx, makeTranslation(Matrix3(), $tx, $ty));
 }
 
 /// Transposes $mtx in place
@@ -602,7 +602,7 @@
 	$sz: z($scale);
 
 	/* prettier-ignore */
-	@return matrix4(
+	@return Matrix4(
 		(1 - ($yy + $zz)) * $sx,
 		($xy + $wz) * $sx,
 		($xz - $wy) * $sx,
@@ -682,7 +682,7 @@
 	$m1: list.set-nth($m1, 10, list.nth($m1, 10) * $invSZ);
 	$m1: list.set-nth($m1, 11, list.nth($m1, 11) * $invSZ);
 
-	$quaternion: quaternion.setFromRotationMatrix(quaternion(), $m1);
+	$quaternion: quaternion.setFromRotationMatrix(Quaternion(), $m1);
 
 	$scale: Vector3($sx, $sy, $sz);
 
@@ -703,7 +703,7 @@
 	$scaleZ: math.div(1, vector.length(vector.setFromMatrixColumn(Vector3(), $m, 3)));
 
 	/* prettier-ignore */
-	@return matrix4(
+	@return Matrix4(
 		list.nth($m, 1) * $scaleX,
 		list.nth($m, 2) * $scaleX,
 		list.nth($m, 3) * $scaleX,
@@ -816,7 +816,7 @@
 	$ty: $t * $y;
 
 	/* prettier-ignore */
-	@return matrix4(
+	@return Matrix4(
 		$tx * $x + $c,
 		$tx * $y - $s * $z,
 		$tx * $z + $s * $y,
@@ -851,7 +851,7 @@
 	}
 
 	/* prettier-ignore */
-	@return matrix4(
+	@return Matrix4(
 		x($xAxis), x($yAxis), x($zAxis), 0,
 		y($xAxis), y($yAxis), y($zAxis), 0,
 		z($xAxis), z($yAxis), z($zAxis), 0,
@@ -882,7 +882,7 @@
 	$c: math.div(-($far + $near), ($far - $near));
 	$d: math.div(-2 * $far * $near, ($far - $near));
 
-	@return matrix4($x, 0, 0, 0, 0, $y, 0, 0, $a, $b, $c, -1, 0, 0, $d, 0);
+	@return Matrix4($x, 0, 0, 0, 0, $y, 0, 0, $a, $b, $c, -1, 0, 0, $d, 0);
 }
 
 /// Creates an orthographic projection matrix
@@ -908,7 +908,7 @@
 	$y: ($top + $bottom) * $h;
 	$z: ($far + $near) * $p;
 
-	@return matrix4(2 * $w, 0, 0, 0, 0, 2 * $h, 0, 0, 0, 0, -2 * $p, 0, -$x, -$y, -$z, 1);
+	@return Matrix4(2 * $w, 0, 0, 0, 0, 2 * $h, 0, 0, 0, 0, -2 * $p, 0, -$x, -$y, -$z, 1);
 }
 
 /// Sets the rotation component (the upper left 3x3 matrix) of $mtx to the rotation specified by $euler
@@ -992,7 +992,7 @@
 	$c: math.cos($theta);
 	$s: math.sin($theta);
 
-	@return matrix4(1, 0, 0, 0, 0, $c, -$s, 0, 0, $s, $c, 0, 0, 0, 0, 1);
+	@return Matrix4(1, 0, 0, 0, 0, $c, -$s, 0, 0, $s, $c, 0, 0, 0, 0, 1);
 }
 
 /// Sets $mtx as a rotational transformation around the Y axis by $theta radians
@@ -1007,7 +1007,7 @@
 	$c: math.cos($theta);
 	$s: math.sin($theta);
 
-	@return matrix4($c, 0, $s, 0, 0, 1, 0, 0, -$s, 0, $c, 0, 0, 0, 0, 1);
+	@return Matrix4($c, 0, $s, 0, 0, 1, 0, 0, -$s, 0, $c, 0, 0, 0, 0, 1);
 }
 
 /// Sets $mtx as a rotational transformation around the Z axis by $theta radians
@@ -1022,7 +1022,7 @@
 	$c: math.cos($theta);
 	$s: math.sin($theta);
 
-	@return matrix4($c, -$s, 0, 0, $s, $c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+	@return Matrix4($c, -$s, 0, 0, $s, $c, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 }
 
 /// Sets $mtx as a shear transform
@@ -1039,7 +1039,7 @@
 		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
 	}
 
-	@return matrix4(1, $yx, $zx, 0, $xy, 1, $zy, 0, $xz, $yz, 1, 0, 0, 0, 0, 1);
+	@return Matrix4(1, $yx, $zx, 0, $xy, 1, $zy, 0, $xz, $yz, 1, 0, 0, 0, 0, 1);
 }
 
 /// Set the upper 3x3 elements of $mtx to the values of the Matrix3 $m
@@ -1056,7 +1056,7 @@
 	}
 
 	/* prettier-ignore */
-	@return matrix4(
+	@return Matrix4(
 		list.nth($m, 0), list.nth($m, 3), list.nth($m, 6), 0,
 		list.nth($m, 1), list.nth($m, 4), list.nth($m, 7), 0,
 		list.nth($m, 2), list.nth($m, 5), list.nth($m, 8), 0,

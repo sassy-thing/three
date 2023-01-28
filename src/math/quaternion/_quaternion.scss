@@ -23,7 +23,7 @@
 /// @param {Quaternion} $quat -
 /// @return {Quaternion} -
 @function conjugate($quat) {
-	@return quaternion(x($quat) * -1, y($quat) * -1, z($quat) * -1, w($quat));
+	@return Quaternion(x($quat) * -1, y($quat) * -1, z($quat) * -1, w($quat));
 }
 
 /// Copies the x, y, z and w properties of $q into $quat
@@ -70,7 +70,7 @@
 /// @param {Quaternion} $quat -
 /// @return {Quaternion} -
 @function identity($quat) {
-	@return quaternion(0, 0, 0, 1);
+	@return Quaternion(0, 0, 0, 1);
 }
 
 /// Inverts $quat - calculates the conjugate. The Quaternion is assumed to have unit length
@@ -111,11 +111,11 @@
 	$l: length($quat);
 
 	@if ($l == 0) {
-		@return quaternion(0, 0, 0, 1);
+		@return Quaternion(0, 0, 0, 1);
 	} @else {
 		$l: math.div(1, $l);
 
-		@return quaternion(x($quat) * l, y($quat) * l, z($quat) * l, w($quat) * l);
+		@return Quaternion(x($quat) * l, y($quat) * l, z($quat) * l, w($quat) * l);
 	}
 }
 
@@ -124,7 +124,7 @@
 /// @param {Quaternion} $q -
 /// @return {Quaternion} -
 @function multiply($quat, $q) {
-	@return quaternion(
+	@return Quaternion(
 		x($quat) * w($q) + w($quat) * x($q) + y($quat) * z($q) - z($quat) * y($q),
 		y($quat) * w($q) + w($quat) * y($q) + z($quat) * x($q) - x($quat) * z($q),
 		z($quat) * w($q) + w($quat) * z($q) + x($quat) * y($q) - y($quat) * x($q),
@@ -151,7 +151,7 @@
 	$u2: 2 * math.$pi * math.random();
 	$u3: 2 * math.$pi * math.random();
 
-	@return quaternion(
+	@return Quaternion(
 		$sqrt1u1 * math.cos($u2),
 		$sqrtu1 * math.sin($u3),
 		$sqrtu1 * math.cos($u3),
@@ -210,7 +210,7 @@
 	}
 
 	@if ($cosHalfTheta >= 1) {
-		@return quaternion($x, $y, $z, $w);
+		@return Quaternion($x, $y, $z, $w);
 	}
 
 	$sqrtSinHalfTheta: 1 - $cosHalfTheta * $cosHalfTheta;
@@ -219,7 +219,7 @@
 		$s: 1 - $t;
 
 		@return normalize(
-			quaternion(
+			Quaternion(
 				$s * $x + $t * x($quat),
 				$s * $y + $t * y($quat),
 				$s * $z + $t * z($quat),
@@ -233,7 +233,7 @@
 	$ratioA: math.div(math.sin((1 - $t) * $halfTheta), $sinHalfTheta);
 	$ratioB: math.div(math.sin($t * $halfTheta), $sinHalfTheta);
 
-	@return quaternion(
+	@return Quaternion(
 		$x * $ratioA + x($quat) * $ratioB,
 		$y * $ratioA + y($quat) * $ratioB,
 		$z * $ratioA + z($quat) * $ratioB,
@@ -250,7 +250,7 @@
 	$halfAngle: math.div($angle, 2);
 	$s: math.sin($halfAngle);
 
-	@return quaternion(x($axis) * $s, y($axis) * $s, z($axis) * $s, math.cos($halfAngle));
+	@return Quaternion(x($axis) * $s, y($axis) * $s, z($axis) * $s, math.cos($halfAngle));
 }
 
 //// Sets $quat from the rotation specified by $euler
@@ -344,12 +344,12 @@
 		$r: 0;
 
 		@if (math.abs(x($vFrom)) > math.abs(z($vFrom))) {
-			$out: quaternion(-y($vFrom), x($vFrom), 0, $r);
+			$out: Quaternion(-y($vFrom), x($vFrom), 0, $r);
 		} @else {
-			$out: quaternion(0, -z($vFrom), y($vFrom), $r);
+			$out: Quaternion(0, -z($vFrom), y($vFrom), $r);
 		}
 	} @else {
-		$out: quaternion(
+		$out: Quaternion(
 			y($vFrom) * z($vTo) - z($vFrom) * y($vTo),
 			z($vFrom) * x($vTo) - x($vFrom) * z($vTo),
 			x($vFrom) * y($vTo) - y($vFrom) * x($vTo),

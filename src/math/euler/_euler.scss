@@ -75,8 +75,8 @@
 /// @return {Euler} -
 @function setFromQuaternion($eul, $quaternion) {
 	@return setFromRotationMatrix(
-		quaternion(),
-		matrix.makeRotationFromQuaternion(matrix4(), $quaternion)
+		Quaternion(),
+		matrix.makeRotationFromQuaternion(Matrix4(), $quaternion)
 	);
 }
 
@@ -85,5 +85,5 @@
 /// @param {Vector3} $vec -
 /// @return {Euler} -
 @function setFromVector3($eul, $vec) {
-	@return euler(x($vec), y($vec), z($vec));
+	@return Euler(x($vec), y($vec), z($vec));
 }
