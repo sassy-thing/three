@@ -34,7 +34,17 @@ TODO
 
 ## ✔️ Features
 
-TODO
+- [x] Vector2 & Vector3 (with minor incompleteness, waiting for Spherical & Cylindrical)
+- [x] Eulers & Quaternions
+- [x] Matrix3 & Matrix4
+- [ ] Orthographic Camera
+- [ ] Perspective Camera
+- [ ] BufferGeometry
+- [ ] Primitive Geometries (Box, Cylinder, Sphere, ...)
+- [ ] Renderer
+- [ ] Materials
+- [ ] Lights (might be out of my league)
+- [ ] GLTF/GLB support (will be writing a GLB/GLTF to sassy-things/three sass parser)
 
 ## Running Source
 
