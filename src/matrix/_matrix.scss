@@ -3,9 +3,10 @@
 
 @use '../utils/math-utils';
 @use '../utils/property-utils';
+
 @use '../vec/vec' as vec;
-@use 'vec.global';
-@use 'matrix.global';
+@use '../vec/vec.global' as *;
+@use 'matrix.global' as *;
 
 /**
  * Methods

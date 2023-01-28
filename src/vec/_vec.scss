@@ -3,8 +3,9 @@
 
 @use '../utils/math-utils';
 @use '../utils/property-utils';
+
 @use '../quaternion/quaternion' as quaternion;
-@use 'vec.global';
+@use 'vec.global' as *;
 
 /**
  * Methods

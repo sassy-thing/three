@@ -3,9 +3,10 @@
 
 @use '../utils/math-utils';
 @use '../utils/property-utils';
+
 @use '../matrix/matrix' as matrix;
-@use 'euler.global';
-@use 'matrix.global';
+@use '../matrix/matrix.global' as *;
+@use 'euler.global' as *;
 
 /**
  * Methods
