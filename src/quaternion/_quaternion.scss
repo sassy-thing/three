@@ -254,10 +254,25 @@
 
 //// Sets $quat from the rotation specified by $euler
 /// @param {Quaternion} $quat -
-/// @param {Euler} $euler -
+/// @param {Euler} $euler - rotation euler based on the orientation 'xyz'
 /// @return {Quaternion} -
 @function setFromEuler($quat, $euler) {
-	@error "setFromEuler not implemented yet. requires Euler";
+	$c1: math.cos(math.div($x, 2));
+	$c2: math.cos(math.div($y, 2));
+	$c3: math.cos(math.div($z, 2));
+
+	$s1: math.sin(math.div($x, 2));
+	$s2: math.sin(math.div($y, 2));
+	$s3: math.sin(math.div($z, 2));
+
+	$out: $quat;
+
+	$out: setX($s1 * $c2 * $c3 + $c1 * $s2 * $s3);
+	$out: setY($c1 * $s2 * $c3 - $s1 * $c2 * $s3);
+	$out: setZ($c1 * $c2 * $s3 + $s1 * $s2 * $c3);
+	$out: setW($c1 * $c2 * $c3 - $s1 * $s2 * $s3);
+
+	@return $out;
 }
 
 /// Sets $quat from rotation component of $matrix
@@ -265,7 +280,51 @@
 /// @param {Matrix4} $matrix A Matrix4 of which the upper 3x3 of the Matrix is a pure rotation Matrix (i.e. unscaled)
 /// @return {Quaternion} -
 @function setFromRotationMatrix($quat, $matrix) {
-	@error "setFromRotationMatrix not implemented yet. requires Matrix4";
+	$m11: list.nth($matrix, 1);
+	$m12: list.nth($matrix, 5);
+	$m13: list.nth($matrix, 9);
+	$m21: list.nth($matrix, 2);
+	$m22: list.nth($matrix, 6);
+	$m23: list.nth($matrix, 10);
+	$m31: list.nth($matrix, 3);
+	$m32: list.nth($matrix, 7);
+	$m33: list.nth($matrix, 11);
+
+	$trace: $m11 + $m22 + $m33;
+
+	$out: $quat;
+
+	@if ($trace > 0) {
+		$s: math.div(0.5, math.sqrt($trace + 1));
+
+		$out: setW($out, math.div(0.25, $s));
+		$out: setX(($m32 - $m23) * $s);
+		$out: setY(($m13 - $m31) * $s);
+		$out: setZ(($m21 - $m12) * $s);
+	} @else if ($m11 > $m22 and $m11 > $m33) {
+		$s: 2 * math.sqrt(1 + $m11 - $m22 - $m33);
+
+		$out: setW(($m32 - $m23) / $s);
+		$out: setX(0.25 * $s);
+		$out: setY(($m12 + $m21) / $s);
+		$out: setZ(($m13 + $m31) / $s);
+	} @else if ($m22 > $m33) {
+		$s: 2 * math.sqrt(1 + $m22 - $m11 - $m33);
+
+		$out: setW(($m13 - $m31) / $s);
+		$out: setX(($m12 + $m21) / $s);
+		$out: setY(0.25 * $s);
+		$out: setZ(($m23 + $m32) / $s);
+	} @else {
+		$s: 2 * math.sqrt(1 + $m33 - $m11 - $m22);
+
+		$out: setW(($m21 - $m12) / $s);
+		$out: setX(($m13 + $m31) / $s);
+		$out: setY(($m23 + $m32) / $s);
+		$out: setZ(0.25 * $s);
+	}
+
+	@return $out;
 }
 
 /// Sets $quat to the rotation required to rotate direction Vec3 $vFrom to direction Vec3 $vTo

@@ -3,7 +3,9 @@
 
 @use '../utils/math-utils';
 @use '../utils/property-utils';
+@use '../matrix/matrix' as matrix;
 @use 'euler.global';
+@use 'matrix.global';
 
 /**
  * Methods
@@ -41,7 +43,29 @@
 /// @param {Matrix4} $matrix A Matrix4 of which the upper 3x3 of the Matrix is a pure rotation Matrix (i.e. unscaled)
 /// @return {Euler} -
 @function setFromRotationMatrix($eul, $matrix) {
-	@error "setFromRotationMatrix not implemented yet. requires Matrix4";
+	$m11: list.nth($matrix, 1);
+	$m12: list.nth($matrix, 5);
+	$m13: list.nth($matrix, 9);
+	$m21: list.nth($matrix, 2);
+	$m22: list.nth($matrix, 6);
+	$m23: list.nth($matrix, 10);
+	$m31: list.nth($matrix, 3);
+	$m32: list.nth($matrix, 7);
+	$m33: list.nth($matrix, 11);
+
+	$out: $eul;
+
+	$out: setY($out, math.asin(sassy-clamp($m13, -1, 1)));
+
+	@if (math.abs($m13) < 0.9999999) {
+		$out: setX($out, math.atan2($m23, $m33));
+		$out: setZ($out, math.atan2($m12, $m11));
+	} @else {
+		$out: setX($out, math.atan2($m32, $m22));
+		$out: setZ($out, 0);
+	}
+
+	@return $out;
 }
 
 /// Sets the angles of $eul transform from a normalized Quaternion based on the orientation 'xyz'
@@ -49,7 +73,10 @@
 /// @param {Quaternion} $quaternion A normalized Quaternion
 /// @return {Euler} -
 @function setFromQuaternion($eul, $quaternion) {
-	@error "setFromQuaternion not implemented yet. requires setFromRotationMatrix";
+	@return setFromRotationMatrix(
+		quaternion(),
+		matrix.makeRotationFromQuaternion(matrix4(), $quaternion)
+	);
 }
 
 /// Set the xyz of $eul to match the xyz of $vec based on the orientation 'xyz'

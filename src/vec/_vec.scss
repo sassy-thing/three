@@ -56,11 +56,11 @@
 /// @param {Euler} $euler -
 /// @return {Vec3} -
 @function applyEuler($vec, $euler) {
-	@error "applyEuler not implemented yet. requires applyQuaternion, Euler";
-
 	@if not isVec3($vec) {
 		@error "Argument $vec #{$vec} must be of type Vec3.";
 	}
+
+	@return applyQuaternion($vec, quaternion.setFromEuler(quaternion(), $euler));
 }
 
 /// Multiplies $vec by $matrix
@@ -69,7 +69,32 @@
 /// @param {Matrix3} $matrix -
 /// @return {Vec} -
 @function applyMatrix3($vec, $matrix) {
-	@error "applyMatrix3 not implemented yet. requires matrix3";
+	$x: x($vec);
+	$y: y($vec);
+
+	$z: 1;
+	@if isVec3($vec) {
+		$z: z($vec);
+	}
+
+	$out: $vec;
+
+	$out: setX(
+		$out,
+		list-nth($matrix, 1) * $x + list-nth($matrix, 4) * $y + list-nth($matrix, 7) * $z
+	);
+	$out: setY(
+		$out,
+		list-nth($matrix, 2) * $x + list-nth($matrix, 5) * $y + list-nth($matrix, 8) * $z
+	);
+	@if isVec3($vec) {
+		$out: setY(
+			$out,
+			list-nth($matrix, 3) * $x + list-nth($matrix, 6) * $y + list-nth($matrix, 9) * $z
+		);
+	}
+
+	@return $out;
 }
 
 /// Multiplies $vec (with an implicit 1 in the 4th dimension) by $matrix, and divides by perspective
@@ -77,11 +102,32 @@
 /// @param {Matrix4} $matrix -
 /// @return {Vec3} -
 @function applyMatrix4($vec, $matrix) {
-	@error "applyMatrix4 not implemented yet. requires matrix4";
-
 	@if not isVec3($vec) {
 		@error "Argument $vec #{$vec} must be of type Vec3.";
 	}
+
+	$w: math.div(
+		1,
+		(
+			list.nth($matrix, 4) * $x + list.nth($matrix, 8) * $y + list.nth($matrix, 12) * $z +
+				list.nth($matrix, 16)
+		)
+	);
+
+	@return vec3(
+		(
+				list.nth($matrix, 1) * x($vec) + list.nth($matrix, 5) * y($vec) +
+					list.nth($matrix, 9) * z($vec) + list.nth($matrix, 13)
+			) * $w,
+		(
+				list.nth($matrix, 2) * x($vec) + list.nth($matrix, 6) * y($vec) +
+					list.nth($matrix, 10) * z($vec) + list.nth($matrix, 14)
+			) * $w,
+		(
+				list.nth($matrix, 3) * x($vec) + list.nth($matrix, 7) * y($vec) +
+					list.nth($matrix, 11) * z($vec) + list.nth($matrix, 15)
+			) * $w
+	);
 }
 
 /// Multiplies $vec by normal Matrix $matrix and normalizes the result
@@ -89,11 +135,11 @@
 /// @param {Matrix3} $matrix -
 /// @return {Vec3} -
 @function applyNormalMatrix($vec, $matrix) {
-	@error "applyNormalMatrix not implemented yet. requires matrix3";
-
 	@if not isVec3($vec) {
 		@error "Argument $vec #{$vec} must be of type Vec3.";
 	}
+
+	@return normalize(applyMatrix3($vec, $matrix));
 }
 
 /// Applies a Quaternion transform to $vec
@@ -623,11 +669,11 @@
 /// @param {Euler} $euler -
 /// @return {Vec3} -
 @function setFromEuler($vec, $euler) {
-	@error "setFromEuler not implemented yet. requires Euler, applyQuaternion";
-
 	@if not isVec3($vec) {
 		@error "Argument $vec #{$vec} must be of type Vec3.";
 	}
+
+	@return vec3(x($euler), y($euler), z($euler));
 }
 
 /// Sets $vec's axis values from $index column of $matrix
@@ -661,11 +707,11 @@
 /// @param {Matrix4} $matrix -
 /// @return {Vec3} -
 @function setFromMatrixPosition($vec, $matrix) {
-	@error "setFromMatrixPosition not implemented yet. requires Matrix4";
-
 	@if not isVec3($vec) {
 		@error "Argument $vec #{$vec} must be of type Vec3.";
 	}
+
+	@return vec3(list.nth($matrix, 13), list.nth($matrix, 14), list.nth($matrix, 15));
 }
 
 /// Sets $vec to the scale elements of the transformation matrix $matrix
@@ -673,11 +719,15 @@
 /// @param {Matrix4} $matrix -
 /// @return {Vec3} -
 @function setFromMatrixScale($vec, $matrix) {
-	@error "setFromMatrixScale not implemented yet. requires Matrix4";
-
 	@if not isVec3($vec) {
 		@error "Argument $vec #{$vec} must be of type Vec3.";
 	}
+
+	@return vec3(
+		length(setFromMatrixColumn($vec, $matrix, 0)),
+		length(setFromMatrixColumn($vec, $matrix, 1)),
+		length(setFromMatrixColumn($vec, $matrix, 2))
+	);
 }
 
 /// Sets $vec from the Spherical coordinates $spherical
@@ -764,11 +814,17 @@
 /// @param {Matric4} $matrix -
 /// @return {Vec3} -
 @function transformDirection($vec, $matrix) {
-	@error "transformDirection not implemented yet. requires Matrix4";
-
 	@if not isVec3($vec) {
 		@error "Argument $vec #{$vec} must be of type Vec3.";
 	}
+
+	@return normalize(
+		vec3(
+			list.nth($matrix, 1) * $x + list.nth($matrix, 5) * $y + list.nth($matrix, 9) * $z,
+			list.nth($matrix, 2) * $x + list.nth($matrix, 6) * $y + list.nth($matrix, 10) * $z,
+			list.nth($matrix, 3) * $x + list.nth($matrix, 7) * $y + list.nth($matrix, 11) * $z
+		)
+	);
 }
 
 /// Projects $vec from the $camera's normalized device coordinate (NDC) space into world space
