@@ -243,7 +243,7 @@
 
 /// Sets $quat from rotation specified by $axis and $angle
 /// @param {Quaternion} $quat -
-/// @param {Vec3} $axis Normalised axis
+/// @param {Vector3} $axis Normalised axis
 /// @param {Number} $angle Angle in radians
 /// @return {Quaternion} -
 @function setFromAxisAngle($quat, $axis, $angle) {
@@ -328,10 +328,10 @@
 	@return $out;
 }
 
-/// Sets $quat to the rotation required to rotate direction Vec3 $vFrom to direction Vec3 $vTo
+/// Sets $quat to the rotation required to rotate direction Vector3 $vFrom to direction Vector3 $vTo
 /// @param {Quaternion} $quat -
-/// @param {Vec3} $vFrom Normalised Vec3
-/// @param {Vec3} $vTo Normalised Vec3
+/// @param {Vector3} $vFrom Normalised Vector3
+/// @param {Vector3} $vTo Normalised Vector3
 /// @return {Quaternion} -
 @function setFromUnitVectors($quat, $vFrom, $vTo) {
 	$out: $quat;

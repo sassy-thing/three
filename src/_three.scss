@@ -1,5 +1,5 @@
-@forward 'math/vec/vec.global';
-@forward 'math/vec/vec' as vec-*;
+@forward 'math/vector/vector.global';
+@forward 'math/vector/vector' as vector-*;
 
 @forward 'math/quaternion/quaternion.global';
 @forward 'math/quaternion/quaternion' as quaternion-*;

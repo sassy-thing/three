@@ -3,11 +3,11 @@
 /**
  * Constructor
  */
-@function vec2($x: 0, $y: 0) {
+@function Vector2($x: 0, $y: 0) {
 	@return ('x': $x, 'y': $y);
 }
 
-@function vec3($x: 0, $y: 0, $z: 0) {
+@function Vector3($x: 0, $y: 0, $z: 0) {
 	@return ('x': $x, 'y': $y, 'z': $z);
 }
 

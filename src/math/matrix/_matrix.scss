@@ -4,8 +4,8 @@
 @use '../../utils/math-utils';
 @use '../../utils/property-utils';
 
-@use '../vec/vec' as vec;
-@use '../vec/vec.global' as *;
+@use '../vector/vector' as vec;
+@use '../vector/vector.global' as *;
 @use 'matrix.global' as *;
 
 /**
@@ -68,30 +68,30 @@
 
 /// Extracts the basis of $mtx into three axis Vectors
 /// @param {Matrix3} $mtx -
-/// @return {sass:map($xAxis: Vec3, $yAxis: Vec3, $zAxis: Vec3)} -
+/// @return {sass:map($xAxis: Vector3, $yAxis: Vector3, $zAxis: Vector3)} -
 @function extractBasisMatrix3($mtx) {
 	@if not isMatrix3($mtx) {
 		@error "Argument $mtx #{$mtx} must be of type Matrix3.";
 	}
 
-	$xAxis: vec.setFromMatrix3Column(vec3(), $mtx, 1);
-	$yAxis: vec.setFromMatrix3Column(vec3(), $mtx, 2);
-	$zAxis: vec.setFromMatrix3Column(vec3(), $mtx, 3);
+	$xAxis: vector.setFromMatrix3Column(Vector3(), $mtx, 1);
+	$yAxis: vector.setFromMatrix3Column(Vector3(), $mtx, 2);
+	$zAxis: vector.setFromMatrix3Column(Vector3(), $mtx, 3);
 
 	@return ($xAxis, $yAxis, $zAxis);
 }
 
 /// Extracts the basis of $mtx into three axis Vectors
 /// @param {Matrix4} $mtx -
-/// @return {sass:map($xAxis: Vec3, $yAxis: Vec3, $zAxis: Vec3)} -
+/// @return {sass:map($xAxis: Vector3, $yAxis: Vector3, $zAxis: Vector3)} -
 @function extractBasisMatrix4($mtx) {
 	@if not isMatrix4($mtx) {
 		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
 	}
 
-	$xAxis: vec.setFromMatrixColumn(vec3(), $mtx, 1);
-	$yAxis: vec.setFromMatrixColumn(vec3(), $mtx, 2);
-	$zAxis: vec.setFromMatrixColumn(vec3(), $mtx, 3);
+	$xAxis: vector.setFromMatrixColumn(Vector3(), $mtx, 1);
+	$yAxis: vector.setFromMatrixColumn(Vector3(), $mtx, 2);
+	$zAxis: vector.setFromMatrixColumn(Vector3(), $mtx, 3);
 
 	@return ($xAxis, $yAxis, $zAxis);
 }
@@ -645,15 +645,15 @@
 /// Note: Not all matrices are decomposable in this way
 /// For example, if an object has a non-uniformly scaled parent, then the object's world matrix may not be decomposable, and this method may not be appropriate
 /// @param {Matrix4} $mtx -
-/// @return {sass:map($position: Vec3, $quaternion: Quaternion, $scale: Vec3)} -
+/// @return {sass:map($position: Vector3, $quaternion: Quaternion, $scale: Vector3)} -
 @function decompose($mtx) {
 	@if not isMatrix4($mtx) {
 		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
 	}
 
-	$sx: vec.length(vec3(list.nth($mtx, 1), list.nth($mtx, 2), list.nth($mtx, 3)));
-	$sy: vec.length(vec3(list.nth($mtx, 5), list.nth($mtx, 6), list.nth($mtx, 7)));
-	$sz: vec.length(vec3(list.nth($mtx, 9), list.nth($mtx, 10), list.nth($mtx, 11)));
+	$sx: vector.length(Vector3(list.nth($mtx, 1), list.nth($mtx, 2), list.nth($mtx, 3)));
+	$sy: vector.length(Vector3(list.nth($mtx, 5), list.nth($mtx, 6), list.nth($mtx, 7)));
+	$sz: vector.length(Vector3(list.nth($mtx, 9), list.nth($mtx, 10), list.nth($mtx, 11)));
 
 	// If determine is negative, we need to invert one scale
 	$det: determinant($mtx);
@@ -661,7 +661,7 @@
 		$sx: -$sx;
 	}
 
-	$position: vec3(list.nth($mtx, 13), list.nth($mtx, 14), list.nth($mtx, 15));
+	$position: Vector3(list.nth($mtx, 13), list.nth($mtx, 14), list.nth($mtx, 15));
 
 	// Scale the rotation part
 	$m1: $mtx;
@@ -684,7 +684,7 @@
 
 	$quaternion: quaternion.setFromRotationMatrix(quaternion(), $m1);
 
-	$scale: vec3($sx, $sy, $sz);
+	$scale: Vector3($sx, $sy, $sz);
 
 	@return ($position, $quaternion, $scale);
 }
@@ -698,9 +698,9 @@
 		@error "Arguments $mtx #{$mtx} and $m #{$m} must be of type Matrix4.";
 	}
 
-	$scaleX: math.div(1, vec.length(vec.setFromMatrixColumn(vec3(), $m, 1)));
-	$scaleY: math.div(1, vec.length(vec.setFromMatrixColumn(vec3(), $m, 2)));
-	$scaleZ: math.div(1, vec.length(vec.setFromMatrixColumn(vec3(), $m, 3)));
+	$scaleX: math.div(1, vector.length(vector.setFromMatrixColumn(Vector3(), $m, 1)));
+	$scaleY: math.div(1, vector.length(vector.setFromMatrixColumn(Vector3(), $m, 2)));
+	$scaleZ: math.div(1, vector.length(vector.setFromMatrixColumn(Vector3(), $m, 3)));
 
 	/* prettier-ignore */
 	@return matrix4(
@@ -746,26 +746,26 @@
 
 /// Constructs a rotation matrix, looking from $eye towards $target oriented by the $up vector
 /// @param {Matrix4} $mtx -
-/// @param {Vec3} $eye -
-/// @param {Vec3} $target -
-/// @param {Vec3} $up -
+/// @param {Vector3} $eye -
+/// @param {Vector3} $target -
+/// @param {Vector3} $up -
 /// @return {Matrix4} -
 @function lookAt($mtx, $eye, $target, $up) {
 	@if not isMatrix4($mtx) {
 		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
 	}
 
-	$z: vec.sub($eye, $target);
+	$z: vector.sub($eye, $target);
 
-	@if (vec.lengthSq($z) == 0) {
+	@if (vector.lengthSq($z) == 0) {
 		// $eye and $target are in the same position
 		$z: setZ($z, 1);
 	}
 
-	$z: vec.normalize($z);
-	$x: vec.cross($up, $z);
+	$z: vector.normalize($z);
+	$x: vector.cross($up, $z);
 
-	@if (vec.lengthSq($x) == 0) {
+	@if (vector.lengthSq($x) == 0) {
 		// $up and $z are parallel
 		@if (math.abs(z($up)) == 1) {
 			$z: setX($z, x($z) + 0.0001);
@@ -773,12 +773,12 @@
 			$z: setZ($z, z($z) + 0.0001);
 		}
 
-		$z: vec.normalize($z);
-		$x: vec.cross($up, $z);
+		$z: vector.normalize($z);
+		$x: vector.cross($up, $z);
 	}
 
-	$x: vec.normalize($x);
-	$y: vec.cross($z, $x);
+	$x: vector.normalize($x);
+	$y: vector.cross($z, $x);
 
 	$out: $mtx;
 
@@ -798,7 +798,7 @@
 /// Sets $mtx as rotation transform around $axis by $theta radians
 /// This is a somewhat controversial but mathematically sound alternative to rotating via Quaternions
 /// @param {Matrix4} $mtx -
-/// @param {Vec3} $axis Rotation axis, should be normalized
+/// @param {Vector3} $axis Rotation axis, should be normalized
 /// @param {Number} $theta Rotation angle in radians
 /// @return {Matrix4} -
 @function makeRotationAxis($mtx, $axis, $theta) {
@@ -841,9 +841,9 @@
 
 /// Set $mtx to the basis matrix consisting of the three provided basis vectors
 /// @param {Matrix4} $mtx -
-/// @param {Vec3} $xAxis -
-/// @param {Vec3} $yAxis -
-/// @param {Vec3} $zAxis -
+/// @param {Vector3} $xAxis -
+/// @param {Vector3} $yAxis -
+/// @param {Vector3} $zAxis -
 /// @return {Matrix4} -
 @function makeBasis($mtx, $xAxis, $yAxis, $zAxis) {
 	@if not isMatrix4($mtx) {
@@ -977,7 +977,7 @@
 		@error "Argument $mtx #{$mtx} must be of type Matrix4.";
 	}
 
-	@return compose(vec3(), $q, vec3(1, 1, 1));
+	@return compose(Vector3(), $q, Vector3(1, 1, 1));
 }
 
 /// Sets $mtx as a rotational transformation around the X axis by $theta radians
@@ -1066,7 +1066,7 @@
 
 /// Sets the position component for $mtx from vector $v, without affecting the rest of the matrix
 /// @param {Matrix4} $mtx -
-/// @param {Number | Vec3} $x -
+/// @param {Number | Vector3} $x -
 /// @param {Number} $y -
 /// @param {Number} $z -
 /// @return {Matrix4} -
