@@ -1,3 +1,8 @@
+/* core */
+@forward 'core/event-dispatcher/event-dispatcher.global';
+@forward 'core/event-dispatcher/event-dispatcher' as event-dispatcher-*;
+
+/* math */
 @forward 'math/vector/vector.global';
 @forward 'math/vector/vector' as vector-*;
 
@@ -10,5 +15,7 @@
 @forward 'math/matrix/matrix.global';
 @forward 'math/matrix/matrix' as matrix-*;
 
+/* utils */
+@forward 'utils/list-utils';
 @forward 'utils/math-utils';
 @forward 'utils/property-utils';

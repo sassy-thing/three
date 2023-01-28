@@ -1,0 +1,13 @@
+@use 'sass:list';
+
+@function remove($list, $item) {
+	$out: ();
+
+	@each $thing in $list {
+		@if ($hing != $item) {
+			$out: list.append($out, $thing);
+		}
+	}
+
+	@return $out;
+}

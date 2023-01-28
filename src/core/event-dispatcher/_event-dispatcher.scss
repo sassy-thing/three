@@ -1,0 +1,75 @@
+@use 'sass:list';
+@use 'sass:map';
+
+@use '../../utils/list-utils';
+
+@use 'event-dispatcher.global' as *;
+
+/// Adds a listener to an event type
+/// @param {EventDispatcher} $eventDispatcher -
+/// @param {sass:string} $type The type of event to listen to
+/// @param {sass:function} $listener The function that gets called when the event is fired
+/// @return {EventDispatcher} -
+@function addEventListener($eventDispatcher, $type, $listener) {
+	$listeners: map.get($eventDispatcher, 'listeners');
+
+	$listenersForType: ();
+	@if (map.has-key($listeners, $type)) {
+		$listenersForType: map.get($listeners, $type);
+	}
+
+	$listenersForType: list.append($listenersForType, $listener);
+
+	$listeners: map.set($type, $listenersForType);
+	$eventDispatcher: map.set($eventDispatcher, 'listeners', $listeners);
+
+	@return $eventDispatcher;
+}
+
+/// Removes a listener from an event type
+/// @param {EventDispatcher} $eventDispatcher -
+/// @param {sass:string} $type The type of the listener that gets removed
+/// @param {sass:function} $listener The listener function that gets removed
+/// @return {EventDispatcher} -
+@function removeEventListener($eventDispatcher, $type, $listener) {
+	@if (not map.has-key($eventDispatcher, 'listeners')) {
+		@return $eventDispatcher;
+	}
+	$listeners: map.get($eventDispatcher, 'listeners');
+
+	@if (not map.has-key($listeners, $type)) {
+		@return $eventDispatcher;
+	}
+
+	$listenersForType: map.get($listeners, $type);
+	$listenersForType: remove($listenersForType, $listener);
+
+	$listeners: map.set($type, $listenersForType);
+	$eventDispatcher: map.set($eventDispatcher, 'listeners', $listeners);
+
+	@return $eventDispatcher;
+}
+
+/// Fire an event type
+/// @param {EventDispatcher} $eventDispatcher -
+/// @param {sass:map} $event The event that gets fired
+/// @return {null} -
+@function dispatchEvent($eventDispatcher, $event) {
+	@if (not map.has-key($eventDispatcher, 'listeners')) {
+		@return null;
+	}
+	$listeners: map.get($eventDispatcher, 'listeners');
+
+	@if (not map.has-key($listeners, $type)) {
+		@return null;
+	}
+	$listenersForType: map.get($listeners, $type);
+
+	$event: map.set($event, 'target', $eventDispatcher);
+
+	@each $listener in $listenersForType {
+		$_: meta.call($listener, $event);
+	}
+
+	@return $eventDispatcher;
+}

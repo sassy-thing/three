@@ -1,0 +1,11 @@
+@use 'sass:map';
+
+/**
+ * Constructor
+ */
+
+/// Creates EventDispatcher
+/// @return {EventDispatcher} -
+@function EventDispatcher() {
+	@return ('listeners': ());
+}
