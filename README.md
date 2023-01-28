@@ -24,6 +24,8 @@ three is a (very) limited port of three.js in SCSS.
 
 <!-- end of header -->
 
+The implementation was originaly based on the [three.js source for realease r149](https://github.com/mrdoob/three.js/tree/r149).
+
 ## 📜 Documentation & Examples
 
 [docs.sassy-thing.dev/three](https://docs.sassy-thing.dev/three)
@@ -37,6 +39,8 @@ TODO
 - [x] Vector2 & Vector3 (with minor incompleteness, waiting for Spherical & Cylindrical)
 - [x] Eulers & Quaternions
 - [x] Matrix3 & Matrix4
+- [x] EventDispatcher
+- [ ] Object3D
 - [ ] Orthographic Camera
 - [ ] Perspective Camera
 - [ ] BufferGeometry
